@@ -31,7 +31,7 @@ if(!empty($username)) {
           <div class="panel-body">
             <form action="/login/" method="post">
               <div class="form-group">
-                <input class="form-control" placeholder="Nom d'utilisateur" name="username" type="text" required>
+                <input class="form-control" placeholder="Nom d'utilisateur T411" name="username" type="text" required>
               </div>
               <div class="form-group">
                 <input class="form-control" placeholder="Mot de passe" name="password" type="password" value="" required>
