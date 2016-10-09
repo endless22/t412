@@ -1,0 +1,6 @@
+{
+    "require": {
+        "kleiram/transmission-php": "dev-master",
+        "phpmailer/phpmailer": "~5.2"
+    }
+}

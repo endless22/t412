@@ -1,0 +1,16 @@
+body {
+  background: url('/img/back.png');
+  background-color: #444;
+  background: url('/img/pinlayer2.png'), url('/img/pinlayer1.png'), url('/img/back.png');
+}
+
+.vertical-align {
+  min-height: 100%;
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+}
+
+#btn {
+  border-radius: 0 !important;
+}

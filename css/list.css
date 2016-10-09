@@ -1,0 +1,12 @@
+html, body {
+  max-width: 100%;
+  overflow-x: hidden;
+}
+
+li.title {
+  word-wrap: break-word;
+}
+
+span.size {
+  color: black;
+}
