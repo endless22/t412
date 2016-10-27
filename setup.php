@@ -38,17 +38,20 @@ foreach($extension as $value) {
 if($fail) { echo "<br>Veuillez <span style=color:red>installer les extensions nécessaires</span> avant de continuer."; exit; }
 
 if(empty(Utils::KEY)) {
-  echo "<br>Clé de sécurité: <span style=color:red>non insérée</span><br>"; $fail = true;
+  echo "<br>Clé de sécurité: <span style=color:red>non insérée</span><br>";
+  echo bin2hex(openssl_random_pseudo_bytes(32))  . '<br>';  
+  $fail = true;
 } elseif(strlen(Utils::KEY) != 64) {
   echo "<br>Clé de chiffrement au mauvais format.<br> Veuillez utiliser une clé de 32 octets comme ci-dessous pour un chiffrement 256bits<br>";
   echo bin2hex(openssl_random_pseudo_bytes(32))  . '<br>';
+  $fail = true;
 } else {
  echo "<br>Clé de sécurité: <span style=color:green>OK</span><br>";
 }
 
 echo '<br>';
 
-if(empty(T411::DB_USER) && empty(T411::DB_PASS) && empty(T411::DB_HOST) && empty(T411::DB_PASS)) {
+if(empty(T411::DB_USER) && empty(T411::DB_PASS) && empty(T411::DB_PASS)) {
   echo "Identifiants MySQL: <span style=color:red>non insérés</span><br>";
 } else {
   echo "identifiants MySQL: <span style=color:green>insérés</span><br>";
