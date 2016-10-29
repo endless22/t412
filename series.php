@@ -101,7 +101,7 @@ foreach ($a as $key => $value) {
   !array_keys(array_column($torrents, 'episode'), $value['episode']) ? $torrents[$value['episode']] = $value AND $torrents[$value['episode']]['fallback'] = 'true' : null;
 }
 
-array_multisort(array_column($torrents, 'episode'), SORT_DESC, $torrents);
+array_multisort(array_column($torrents, 'episode'), SORT_ASC, $torrents);
 ?>
     <div class="table-responsive">
       <table class="table table-bordered table-hover">
