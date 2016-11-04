@@ -52,7 +52,7 @@ class Mailing extends Utils {
 
       foreach ($this->series as $key => $value) {
         echo '------ série ' . $key . ' -> ' . $value->name . ' (saison ' . $value->saison . ' - épisode ' . $value->current . ')' . $this->cr;
-        $this->a[$key] = $this->torrents[$key] = [];
+        $this->torrents[$key] = array();
         $this->query = $value->name;
         $this->querystring = '?limit=5000&cid=433&term[51][]=' . $value->language . '&term[45][]=' . (967+$value->saison);
         $this->torrentSearch();
