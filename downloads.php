@@ -42,7 +42,7 @@ foreach ($reponse as $key => $torrent) {
 ?>
      <li class="list-group-item list-group-item-<?php echo $status;?> title" data-toggle="collapse" data-target="#<?php echo $key;?>">
         <?php echo $torrent->getName(); ?>
-        <?php echo '<span class="badge progress-bar-' . $status . '">' . ($status == 'warning' ? $torrent->getPercentDone()*100 . '%' : count($torrent->getFiles())) . '</span>'; ?>
+        <?php echo '<span class="badge progress-bar-' . $status . '">' . ($status == 'warning' ? $torrent->getPercentDone() . '%' : count($torrent->getFiles())) . '</span>'; ?>
         <ul class="nav nav-list collapse" id="<?php echo $key;?>">
           <span class="label label-success"><?php echo $t411->formatBytes($torrent->getSize()); ?> reçu</span>
           <span class="label label-danger"><?php echo $t411->formatBytes($torrent->getUploadedEver());?> envoyé</span>
