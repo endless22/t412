@@ -38,7 +38,7 @@ $state = $t411->getCredentials();
 
 $reponse = $t411->listTorrents();
 foreach ($reponse as $key => $torrent) {
-  $status = $torrent->getStatus() == 6 ? 'success' : 'warning';
+  $status = $torrent->isfinished() ? 'success' : 'warning';
 ?>
      <li class="list-group-item list-group-item-<?php echo $status;?> title" data-toggle="collapse" data-target="#<?php echo $key;?>">
         <?php echo $torrent->getName(); ?>
