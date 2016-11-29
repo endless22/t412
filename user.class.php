@@ -3,11 +3,16 @@ require_once __DIR__ . '/' . 'torrent.class.php';
 
 class User extends Torrent {
 
-  public function storeCredentials($uid, $user, $password) {
+  private function connect() {
     $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
     $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
     $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+
+    return $link;
+  }
+
+  public function storeCredentials($uid, $user, $password) {
+    $link = $this->connect();
 
     $statement = $link->prepare("INSERT INTO identifiants(uid, t411user, t411pass)
       VALUES(:uid, :user, :pass)
@@ -17,30 +22,26 @@ class User extends Torrent {
     $statement->bindParam(':pass', $password);
     $statement->execute();
 
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function getCredentials() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("SELECT * FROM identifiants WHERE uid = :uid");
     $statement->bindParam(':uid', $this->uid);
     $statement->execute();
 
     $result = $statement->fetch(PDO::FETCH_OBJ);
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
 
     return $result;
   }
 
   public function addSerie($name, $saison, $current, $last, $langage) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("INSERT INTO autodownload(uid, name, saison, current, last, language)
       VALUES(:uid, :name, :saison, :current, :last, :language)
@@ -53,61 +54,53 @@ class User extends Torrent {
     $statement->bindParam(':language', $langage);
     $statement->execute();
 
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function getSeries() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("SELECT * FROM autodownload WHERE uid = :uid");
     $statement->bindParam(':uid', $this->uid);
     $statement->execute();
 
     $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
 
     return $result;
   }
 
   public function isNotSelectable($uid) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("SELECT * FROM autodownload WHERE uid = :uid");
     $statement->bindParam(':uid', $uid);
     $statement->execute();
 
     $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
 
     return empty($result) ? true : false;
   }
 
   function getLogins() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("SELECT * FROM identifiants");
     $statement->execute();
 
     $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
 
     return $result;
   }
 
   public function updateSerie($id, $episode) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("UPDATE autodownload SET current = :current WHERE id = :id AND uid = :uid");
     $statement->bindParam(':current', $episode);
@@ -115,29 +108,25 @@ class User extends Torrent {
     $statement->bindParam(':uid', $this->uid);
     $statement->execute();
 
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function dropDB($duree) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("TRUNCATE TABLE `$duree`");
     $statement->execute();
 
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function updateTopDB($duree, $contenu) {
     $this->dropDB($duree);
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+    $link = $this->connect();
 
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    foreach($contenu as $top) {
+    foreach ($contenu as $top) {
       $statement = $link->prepare("INSERT INTO `$duree`(id, category, categoryname, name, rewritename, added, size, times_completed, seeders, leechers)
         VALUES(:id, :category, :categoryname, :name, :rewritename, :added, :size, :times_completed, :seeders, :leechers)");
       $statement->bindParam(':id', $top->id);
@@ -152,40 +141,38 @@ class User extends Torrent {
       $statement->bindParam(':leechers', $top->leechers);
       $statement->execute();
     }
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function getTopFromDB($duree) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("SELECT * FROM $duree");
     $statement->execute();
 
     $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
+
     return $result;
   }
 
   public function deleteSerie($id) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("DELETE FROM autodownload WHERE id = :id AND uid = :uid");
     $statement->bindParam(':id', $id);
     $statement->bindParam(':uid', $this->uid);
     $statement->execute();
 
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function trySQLConnection() {
     try{
-      $link = new pdo('mysql:host='.parent::DB_HOST.';charset=utf8', parent::DB_USER, parent::DB_PASS, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+      $link = new PDO('mysql:host='.parent::DB_HOST.';charset=utf8', parent::DB_USER, parent::DB_PASS, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
       return true;
     } catch(PDOException $e){
       return false;
@@ -205,14 +192,12 @@ class User extends Torrent {
     } catch(PDOException $e) {
       return false;
     }
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function createTables() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME.';charset=utf8', parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("CREATE TABLE IF NOT EXISTS `identifiants` (
       `uid` int(11) NOT NULL,
@@ -280,7 +265,8 @@ class User extends Torrent {
       UNIQUE KEY `id` (`id`)
     ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8");
     $statement->execute();
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
 }
