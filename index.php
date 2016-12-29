@@ -102,7 +102,7 @@ if (empty($t411->search) && empty($t411->error)) { ?>
 <?php foreach ($array as $value) { if (!empty($value->name)) { ?>
           <tr>
             <td nowrap class="textcentered"><?php echo $value->categoryname;?></td>
-            <td><a href="/details.php?id=<?php echo $value->id;?>"><?php echo $value->name;?></a></td>
+            <td><a href="details.php?id=<?php echo $value->id;?>"><?php echo $value->name;?></a></td>
             <td nowrap class="textcentered"><?php echo $t411->humanTiming(strtotime($value->added));?></td>
             <td nowrap class="textcentered"><?php echo $t411->formatBytes($value->size);?></td>
             <td class="textcentered"><?php echo $value->times_completed;?></td>
