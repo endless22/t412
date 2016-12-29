@@ -14,7 +14,7 @@ cd t412
 bin/composer update
 ```
 
-Configurez votre vhost (voir ci-dessous [nginx](#vhost-nginx)/[apache](#htaccess-apache)).  
+Configurez votre vhost (voir ci-dessous [nginx](#vhost-nginx)).  
 Rendez-vous à l'adresse où pointe votre domaine (`domain.tld/setup.php`), vérifier que les extensions nécessaires soient chargées et le cas échéant récupérez votre clé de sécurité.  
 
 Éditez le fichier `t412.class.php` et complétez les champs suivants:
@@ -31,14 +31,14 @@ const DL_PREFIX = 'https://dl.domain.tld/';
 /** nom de domaine, sans http(s) */
 public $domainName = 'domain.tld';
 /** utilisateur t411 - nécessaire pour lancer les requêtes cron */
-CONST T411USER = 'johndoe';
+CONST T411USER = 'jeanneige';
 ```
 
 Retournez à l'adresse où pointe votre domaine (`domain.tld/setup.php`) et vérifier que tous les tests renvoient "Ok".  
 Il ne vous reste plus qu'à ajouter vos tâches cron pour récupérer les tops et (facultatif) le téléchargement automatique.
 ```bash
-0 * * * * /usr/bin/php /var/www/t412/cli/top.php
-0 * * * * /usr/bin/php /var/www/t412/cli/autodownload.php
+0 * * * * /usr/bin/php /votre/repertoire/www/cli/top.php
+0 * * * * /usr/bin/php /votre/repertoire/www/cli/autodownload.php
 ```
 
 # Vhost nginx
@@ -64,19 +64,6 @@ server {
         # First attempt to serve request as file, then
         # as directory, then fall back to displaying a 404.
         try_files $uri $uri/ =404;
-        rewrite ^/details/([0-9]*)$ /details.php?id=$1? last;
-        rewrite ^/nfo/([0-9]*)$ /nfo.php?id=$1? last;
-        rewrite ^/download/([0-9]*)/$ /download.php?id=$1? last;
-        rewrite ^/dl/([0-9]*)/$ /dl.php?id=$1? last;
-        rewrite ^/delete/([0-9]*)$ /delete.php?id=$1? last;
-        rewrite ^/login/$ /login.php last;
-        rewrite ^/logout/$ /logout.php last;
-        rewrite ^/downloads/$ /downloads.php last;
-        rewrite ^/seedbox/$ /seedbox.php last;
-        rewrite ^/suivi/$ /suivi.php last;
-        rewrite ^/top/today/$ /top/today.php last;
-        rewrite ^/top/week/$ /top/week.php last;
-        rewrite ^/top/month/$ /top/month.php last;
     }
 
     location ~ \.php$ {
@@ -94,27 +81,3 @@ server {
     }
 
 }
-```
-
-#htaccess Apache
-```apache
-Options -MultiViews
-
-<IfModule mod_rewrite.c>
-    RewriteEngine On
-    RewriteBase /
-    RewriteRule ^details/(.*)$ /details.php?id=$1 [L]
-    RewriteRule ^nfo/(.*)$ /nfo.php?id=$1 [L]
-    RewriteRule ^download/([0-9]*)/$ /download.php?id=$1 [L]
-    RewriteRule ^dl/(.*)$ /dl.php?id=$1 [L]
-    RewriteRule ^delete/(.*)$ /delete.php?id=$1 [L]
-    RewriteRule ^login/$ /login.php [L]
-    RewriteRule ^logout/$ /logout.php [L]
-    RewriteRule ^downloads/$ /downloads.php [L]
-    RewriteRule ^seedbox/$ /seedbox.php [L]
-    RewriteRule ^suivi/$ /suivi.php [L]
-    RewriteRule ^top/today/$ /top/today.php [L]
-    RewriteRule ^top/week/$ /top/week.php [L]
-    RewriteRule ^top/month/$ /top/month.php [L]
-</IfModule>
-```

@@ -3,13 +3,12 @@ require_once __DIR__ . '/' . 'utils.class.php';
 $t411 = new Utils;
 
 $id = isset($_GET['id']) && ctype_digit($_GET['id']) ? $_GET['id'] : $t411->home();
-$t411->id = $id;
-$t411->getDetails();
-$state = $t411->getCredentials();
+$t411->getFullDetails($id);
+$servers = $t411->getSeedboxes();
 
-if(!empty($t411->details->name)) {
+if (!empty($t411->details->name)) {
   foreach ($t411->search->torrents as $value) {
-    if($value->name == $t411->details->name) { $info = $value; }
+    if ($value->name == $t411->details->name) { $info = $value; break; }
   }
 }
 ?>
@@ -20,51 +19,63 @@ if(!empty($t411->details->name)) {
     <title><?php echo isset($t411->details->name)  ? $t411->details->name : 'Détails';?></title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/navbar.css">
-    <link rel="stylesheet" href="/css/details.css">
+    <link rel="stylesheet" href="css/bootstrap.min.css">
+    <link rel="stylesheet" href="css/navbar.css">
+    <link rel="stylesheet" href="css/details.css">
   </head>
   <body>
 
   <div class="container">
 <?php require_once __DIR__ . '/' . 'navbar.php'; ?>
 
-<?php if(empty($t411->details->name)) { ?>
+<?php if (empty($t411->details->name)) { ?>
 
     <div class="jumbotron">
       <h1 style="color:red">Erreur !</h1>
-      <p>Aucune donnée trouvée. <a href="/details/<?php echo $id; ?>">Rafraîchir la page</a> ou retourner à <a href ="/">l'accueil</a>.</p>
+      <p>Aucune donnée trouvée. <a href="details.php?id=<?php echo $id; ?>">Rafraîchir la page</a> ou retourner à <a href="index.php">l'accueil</a>.</p>
     </div>
 
-<?php exit; } ?>
+<?php } else { ?>
 
     <ol class="breadcrumb">
-      <li><a href="/">Torrent</a></li>
+      <li><a href="index.php">Torrent</a></li>
       <li><a><?php echo $t411->details->categoryname; ?></a></li>
-      <li class="active title"><a href="/details/<?php echo $id; ?>"><?php echo strtr($t411->details->name, '.', ' '); ?></a></li>
+      <li class="active title"><a href="details.php?id=<?php echo $id; ?>"><?php echo strtr($t411->details->name, '.', ' '); ?></a></li>
     </ol>
 
-<?php if(!empty($state->user) && ($t411->listTorrent($t411->hash) !== false)) { ?>
+<?php if (!empty($servers)) { foreach ($servers as $value) { if (($value->type == 'transmission') && ($t411->listTorrent($value->id, $t411->hash) !== false)) { ?>
     <div class="alert alert-info alert-dismissible" role="alert">
       <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
       <strong>Instantané:</strong> Vous avez déjà téléchargé ce torrent!
     </div>
+<?php break; } } } ?>
+
+<?php if (!empty($t411->comments) && $t411->flagged === true) { ?>
+    <div class="alert alert-danger alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      <strong>Instantané:</strong> Des commentaire font allusions à <strong>Hadopi</strong>, prenez garde.
+    </div>
 <?php } ?>
 
     <div class="btn-group btn-group-justified" role="group">
-      <a class="btn btn-default" role="button" href="<?php echo isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : '/';?>">Retour</a>
-      <a class="btn btn-default" role="button" href="/nfo/<?php echo $id; ?>" target="_blank">Voir le NFO</a>
+      <a class="btn btn-default" role="button" href="<?php echo isset($_SERVER['HTTP_REFERER']) ? $_SERVER['HTTP_REFERER'] : 'index.php';?>">Retour</a>
+      <a class="btn btn-default" role="button" href="nfo.php?id=<?php echo $id; ?>" target="_blank">Voir le NFO</a>
       <div class=btn-group role=group>
         <a href=# class="btn btn-default dropdown-toggle" data-toggle=dropdown role=button aria-haspopup=true aria-expanded=false> Télécharger <span class=caret></span> </a>
-        <ul class="dropdown-menu">
-          <li><a href="/download/<?php echo $id;?>/">Ajout seedbox</a></li>
-          <li><a href="/dl/<?php echo $id;?>/" target="_blank">Télécharger torrent</a></li>
+        <ul class="dropdown-menu dropdown-menu-right">
+<?php if (!empty($servers)) { ?>
+<?php foreach ($servers as $value) { ?>
+          <li><a href="download.php?type=torrent&id=<?php echo $id;?>&idserv=<?php echo $value->id;?>">Envoyer sur <b><?php echo $t411->decrypt($value->name); ?></b></a></li>
+<?php } ?>
+<?php } ?>
+          <li><a href="directdownload.php?id=<?php echo $id;?>" target="_blank">Télécharger le fichier <b>.torrent</b></a></li>
         </ul>
       </div>
+
     </div>
 
     <div class="page-header terms">
-<?php if(!isset($info)) { ?>
+<?php if (!isset($info)) { ?>
       <span class="label label-primary">Informations indisponible</span>
 <?php } else { ?>
       <span class="label label-primary"><?php echo $t411->formatBytes($info->size);?></span>
@@ -79,7 +90,7 @@ if(!empty($t411->details->name)) {
       <?php echo $t411->details->description . "\n"; ?>
     </div>
 
-<?php if(!empty($t411->comments)) {
+<?php if (!empty($t411->comments)) {
     foreach ($t411->comments as $value) { ?>
     <div class="panel panel-default">
       <div class="panel-heading">
@@ -91,8 +102,9 @@ if(!empty($t411->details->name)) {
     </div>
 <?php } } ?>
     </div>
+<?php } ?>
   </div>
-  <script src="/js/jquery.min.js"></script>
-  <script src="/js/bootstrap.min.js"></script>
+  <script src="js/jquery.min.js"></script>
+  <script src="js/bootstrap.min.js"></script>
   </body>
 </html>

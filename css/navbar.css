@@ -3,6 +3,14 @@ body {
   padding-bottom: 20px;
 }
 
+body, .jumbotron {
+    background-color: #f7f7f7;
+}
+
+.breadcrumb {
+  background-color: #e7e7e7;
+}
+
 .row {
   margin-bottom: 20px;
 }
@@ -26,7 +34,11 @@ table {
   text-align: center;
 }
 
-@media (max-width: 767px) {
+.servers select {
+  margin-bottom: 20px;
+}
+
+@media (max-width: 991px) {
   .po {
     margin-top: 20px;
   }
@@ -44,12 +56,36 @@ table {
   margin-bottom: 20px;
 }
 
-.forme input {
+.servers input {
   margin-bottom: 20px;
+}
+
+.servers {
+  margin-bottom: 200px;
 }
 
 .breadcrumb li {
   max-width: 100%;
   display: inline;
   word-wrap: break-word;
+}
+
+.jumbotron {
+  padding-top: 20px;
+  padding-bottom: 20px;
+  border-radius: 0%;
+  width: 100%;
+}
+
+.invalid input:required:invalid {
+  background: #BE4C54;
+}
+
+.invalid input:required:valid {
+  background: #17D654 ;
+}
+
+input {
+  display: block;
+  margin-bottom: 10px;
 }

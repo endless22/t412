@@ -1,35 +1,27 @@
 <?php
-require_once __DIR__ . '/' . 'utils.class.php';
 /**
- * The Syno class is used to make API calls to the remote Synology NAS
+ * Implémentation personnelle de l'API Synology DiskStation
+ * Fournit les fonctionnalités basiques (connexion,
+ * Création des fichiers, téléchargements)
  *
  * @author Matthias BOSC <matthias@bosc.io>
- * @todo handle errors, and more !
+ *
  */
-class Syno extends Utils {
+class Syno {
   /**
    * @var string
    */
-  public $protocol = 'http';
+  public $protocol;
+
   /**
    * @var string
    */
-  public $ip;
+  public $address;
 
   /**
    * @var int
    */
-  public $port = 5000;
-
-  /**
-   * @var string
-   */
-  public $user;
-
-  /**
-   * @var string
-   */
-  public $pass;
+  public $port;
 
   /**
    * @var string
@@ -57,24 +49,43 @@ class Syno extends Utils {
   public $links;
 
   /**
-   * @var array
+   * @var string
    */
-  private $opts = [];
+  private $username;
 
   /**
    * @var string
    */
-  public $error = null;
+  private $password;
 
   /**
    * @var string
    */
-  public $reponse;
+  public $torrent;
 
-  public function __construct($hash = null, $link = null) {
-    Utils::__construct();
-    $this->hash = !empty($hash) ? $hash : null;
-    $this->links = empty($link) ? $this->getTorrentInfo($hash) : parent::DL_PREFIX.$this->encode($link);
+  /**
+   * @var string
+   */
+  public $hash;
+
+  /**
+   * @var string
+   */
+  public $basename;
+
+  public function __construct($address, $port) {
+    $this->address = $address;
+    $this->port = $port;
+    $this->protocol = ($port == '5001') ? 'https' : 'http';
+  }
+
+  /**
+   * Définit les identifiants
+   * @return array
+   */
+  public function setClient($username, $password) {
+    $this->username = $username;
+    $this->password = $password;
   }
 
   /**
@@ -82,26 +93,17 @@ class Syno extends Utils {
    * @return string
    */
   private function getBaseUrl() {
-    return $this->protocol . '://' . $this->ip . '/webapi/';
-  }
-
-  public function getTorrentInfo($hash) {
-    $this->reponse = $this->listTorrent($hash);
-    return $this->getLinks();
-  }
-
-  private function getLinks() {
-    return implode(',', array_map(function($uri) { return parent::DL_PREFIX.$this->encode($uri); }, array_column($this->reponse->files, 'name')));
+    return $this->protocol . '://' . $this->address . '/webapi/';
   }
 
   /**
    * Obtient le SID pour la session en cours
    * @return array
    */
-  private function getSid() {
+  public function getSid() {
     $params = [
-      'account' => $this->user,
-      'passwd' => $this->pass,
+      'account' => $this->username,
+      'passwd' => $this->password,
       'session' => 'DownloadStation',
       'format' => 'sid'
     ];
@@ -110,7 +112,7 @@ class Syno extends Utils {
 
   /**
    * Ferme la session pour le SID actuel
-   * @return string
+   * @return array
    */
   private function closeSession() {
     $params = [
@@ -121,8 +123,8 @@ class Syno extends Utils {
   }
 
   /**
-   * Cherche le chemin de téléchargement
-   * @return string
+   * Cherche le chemin de téléchargement par défaut
+   * @return array
    */
   private function getInfo() {
     $params = [
@@ -132,40 +134,12 @@ class Syno extends Utils {
   }
 
   /**
-   * Vérifie si le fichier à télécharger est dans un dossier
-   * Si c'est le cas - mais - qu'il y a un seul fichier dans le dossier
-   * Le téléchargement se fera à la racine
-   * @return bool
-   */
-  private function isDir() {
-    return count(explode(',', $this->links)) > 1 ? is_dir($this->downloadDir . '/' . $this->name) : false;
-  }
-
-  private function isShow() {
-    return preg_match("'^(.+)S([0-9]+)E([0-9]+).*$'i", basename($this->links)) ? true : false;
-  }
-
-  private function buildPath() {
-    preg_match("'^(.+)S([0-9]+)E([0-9]+).*$'i", basename(urldecode($this->links)), $output);
-    $name = strtr(rtrim($output[1], ' .-_;'), '.,;-_', '     ');
-    $name = ctype_alpha(strtr($name, [' ' => ''])) ? $name : null;
-    $saison = ctype_digit($output[2]) ? intval($output[2],10) : null;
-    return (!empty($name) && !empty($saison)) ? strtolower('series/' . $name . '/saison ' . $saison) : 'downloads';
-  }
-
-  private function encode($string) {
-    $from = [' ', "'", '(', ')', ':', ';', '@', '&', '=', '+', '$', ',', '?', '%', '#', '[', ']', '"'];
-    $to = ['%20', '%27', '%28', '%29', '%3A', '%3B', '%40', '%26','%3D', '%2B', '%24', '%2C', '%3F', '%25', '%23', '%5B', '%5D', '%22'];
-    return strtr($string, array_combine($from, $to));
-  }
-
-  /**
    * Créé si besoin un dossier sur le NAS
-   * @return string
+   * @return array
    */
   private function createFolder() {
     $params = [
-      'folder_path' => '/' . $this->destination,
+      'folder_path' => '/' . $this->folder_path,
       'name' => $this->name,
       '_sid' => $this->sid
     ];
@@ -173,8 +147,8 @@ class Syno extends Utils {
   }
 
   /**
-   * Télécharge les fichiers sur le nas
-   * @return string
+   * Créé la tâche de téléchargement sur le NAS distant
+   * @return array
    */
   private function download() {
     $params = [
@@ -186,40 +160,151 @@ class Syno extends Utils {
       '_sid' => $this->sid
     ];
     return $this->request('DownloadStation/', 'task.cgi', 'create', 1, $params, 'post');
+  }
+
+  /**
+   * Créé la tâche de téléchargement sur le NAS distant
+   * @return array
+   */
+  private function downloadTorrent($filename) {
+    $params = [
+      'api' => 'SYNO.DownloadStation.Task',
+      'version' => '1',
+      'method' => 'create',
+      'destination' => 'downloads',
+      '_sid' => $this->sid,
+      'file' => new CurlFile(realpath($filename), 'application/x-bittorrent', $this->name . '.torrent')
+    ];
+    return $this->request('DownloadStation/', 'task.cgi', 'create', 1, $params, 'post');
+  }
+
+  /**
+   * Encode les URLs pour être acceptées par DownloadStation
+   * @param $string l'URL de base
+   * @return string
+   */
+  public function encode($string) {
+    $from = array(' ', "'", '(', ')', ':', ';', '@', '&', '=', '+', '$', ',', '?', '%', '#', '[', ']', '"');
+    $to = array('%20', '%27', '%28', '%29', '%3A', '%3B', '%40', '%26','%3D', '%2B', '%24', '%2C', '%3F', '%25', '%23', '%5B', '%5D', '%22');
+    return strtr($string, array_combine($from, $to));
+  }
+
+  private function writeFile() {
+    $torrentfile = tempnam(sys_get_temp_dir(), 'fs1df4sd6f4s6f4s56f4q7er8');
+    $handle = fopen($torrentfile, 'w');
+    fwrite($handle, base64_decode($this->torrent));
+    fclose($handle);
+    return $torrentfile;
+  }
+
+  public function removeFile($filename) {
+    unlink($filename);
+  }
+
+  /**
+   * Construction des tâches
+   */
+  public function addTask($type, $data, $name = null) {
+    $this->isReacheable();
+
+    if ($type == 'link') {
+      $this->links = $data;
+    } elseif ($type == 'hash') {
+      $this->links = $data;
+    } elseif ($type == 'torrent') {
+      $this->torrent = $data;
+    } else {
+      throw new Exception("Erreur inconnue", 1);
+    }
+
+    $this->sid = $this->getSid()->data->sid;
+
+    $default_dest = (!empty($this->folder)) ? trim($this->folder, '/') : $this->getInfo()->data->default_destination;
+
+    if ($type == 'hash'  && count(explode(',', $this->links)) > 1) {
+      $this->folder_path = $default_dest;
+      $this->destination = $default_dest . '/' . $this->name;
+      $this->createFolder();
+    } else {
+      $this->destination = $default_dest;
+    }
+
+    if ($type == 'torrent') {
+      $file = $this->writeFile();
+      $this->downloadTorrent($file);
+      $this->removeFile($file);
+    } else {
+      $this->download();
+    }
     $this->closeSession();
   }
 
   /**
-   * Créé les tâches
-   * @return string
+   * Vérifie que la réponse n'est pas vide ou contient une erreur
+   * @param array $reponse
    */
-  public function addFromHash() {
-    if($this->reponse->status->status != '6') {
-      $this->error = 'Fichier incomplet';
-    } else {
-      $this->downloadDir = $this->reponse->downloadDir;
-      $this->name = $this->reponse->name;
-      $this->sid = $this->getSid()->data->sid ?? null;
-      if(empty($this->error)) {
-        $this->destination = $this->getInfo()->data->default_destination;
-        $this->isDir() ? $this->createFolder() : null;
-        $this->destination = $this->isDir() ? $this->destination . '/' . $this->name : null;
-        $this->download();
+  private function checkError($reponse) {
+    if (!empty($reponse->error)) {
+      throw new Exception('Erreur: ' . $this->error($reponse->error->code), 1);
+    } elseif (empty($reponse)) {
+      throw new Exception('Pas de réponse', 1);
+    } elseif ($reponse->success != 'true') {
+      throw new Exception("Réponse invalide", 1);
+    }
+  }
+
+  /**
+   * Avant de lancer les appels à l'API, vérifie que l'hôte distant
+   * est bien joignable et répond un code HTTP 200
+   */
+  public function isReacheable() {
+    $curl = curl_init($this->getBaseUrl() . 'auth.cgi');
+    curl_setopt($curl, CURLOPT_PORT, $this->port);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, 1);
+    curl_setopt($curl, CURLOPT_VERBOSE, false);
+    curl_setopt($curl, CURLOPT_TIMEOUT, 15);
+    $link = curl_exec($curl);
+    $httpcode = curl_getinfo($curl, CURLINFO_HTTP_CODE);
+    curl_close($curl);
+    if (!$link) {
+      throw new Exception("Hôte injoignable", 1);
+    } elseif ($httpcode != 200) {
+      throw new Exception("Réponse invalide", 1);
+    }
+  }
+
+  /**
+   * Construit et éxécute les réquêtes vers le NAS
+   * @param $api  le nom du fichier (.cgi) appelé
+   * @param $path  le "lien" vers l'API ("DownloadStation", "FileStation", etc.)
+   * @param $method  la méthode appelée sur le NAS distant, définie par l'API Synology
+   * @param $params  les paramètres passés en header nécessaires pour la requête
+   * @param $httpmethod  méthode d'éxécution de la requête (GET ou POST)
+   * @return array
+   */
+  private function request($api, $path, $method, $version = 1, $params = [], $httpmethod = 'get') {
+    $url = $this->getBaseUrl().$api.($httpmethod=='get'?'.cgi?api='.$path.'&version='.$version.'&method='.$method.'&'.http_build_query($params):$path);
+
+    $curl = curl_init($url);
+    curl_setopt($curl, CURLOPT_PORT, $this->port);
+    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
+
+    if ($httpmethod == 'post') {
+      if (isset($this->torrent)) {
+        curl_setopt($curl, CURLOPT_HTTPHEADER, array("Content-Type: multipart/form-data"));
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, $params);
+      } else {
+        curl_setopt($curl, CURLOPT_POST, true);
+        curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($params));
       }
     }
-  }
 
-  public function addFromUrl() {
-    $this->name = urldecode(basename($this->links));
-    $this->sid = $this->getSid()->data->sid ?? null;
-    if(empty($this->error)) {
-      $this->destination = $this->isShow() ? $this->buildPath() : $this->getInfo()->data->default_destination;
-      $this->download();
-    }
-  }
+    $result = curl_exec($curl);
+    curl_close($curl);
 
-  public function buildTask() {
-    return !empty($this->hash) ? $this->addFromHash() : $this->addFromUrl();
+    $this->checkError(json_decode($result));
+    return json_decode($result);
   }
 
   /**
@@ -254,7 +339,7 @@ class Syno extends Utils {
         $message = 'Compte inexistant ou mot de passe invalide';
         break;
       case 401:
-        $message = 'Compte guest désactivé';
+        $message = 'Compte invité désactivé';
         break;
       case 402:
         $message = 'Compte désactivé';
@@ -266,48 +351,10 @@ class Syno extends Utils {
         $message = 'Permission refusée';
         break;
       default:
-        $message = 'Erreur inconnue';
+        $message = 'Raison inconnue';
         break;
     }
     return $message;
-  }
-
-  /**
-   * Vérifie que la réponse n'est pas vide ou contient une erreur
-   * @param object $reponse
-   * @return Ambigus <array,null>
-   */
-  private function checkError($reponse) {
-    if(!empty($reponse->error) && empty($this->error)) {
-      $this->error = $this->error($reponse->error->code);
-    } elseif(empty($reponse) && empty($this->error)) {
-      $this->error = 'Pas de réponse';
-    }
-  }
-
-  /**
-   * Construit et éxécute les réquêtes vers le NAS
-   * @return array
-   */
-  private function request($api, $path, $method, $version = 1, $params = [], $httpmethod = 'get') {
-    $url = $this->getBaseUrl().$api.($httpmethod=='get'?'.cgi?api='.$path.'&version='.$version.'&method='.$method.'&'.http_build_query($params):$path);
-
-    $curl = curl_init($url);
-    curl_setopt($curl, CURLOPT_PORT, $this->port);
-    curl_setopt($curl, CURLOPT_RETURNTRANSFER, true);
-
-    if($httpmethod == 'post') {
-      curl_setopt($curl, CURLOPT_POST, true);
-      curl_setopt($curl, CURLOPT_POSTFIELDS, http_build_query($params));
-    }
-
-    if($result = curl_exec($curl)) { } else {
-      $this->error = curl_error($curl);
-    }
-    curl_close($curl);
-
-    $this->checkError(json_decode($result));
-    return json_decode($result);
   }
 }
 ?>

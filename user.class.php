@@ -3,111 +3,144 @@ require_once __DIR__ . '/' . 'torrent.class.php';
 
 class User extends Torrent {
 
-  public function storeCredentials($uid, $user, $password) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+  private $link;
+  private $statement;
 
+  private function connect() {
+    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
     $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
     $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
-    $statement = $link->prepare("INSERT INTO identifiants(uid, t411user, t411pass)
-      VALUES(:uid, :user, :pass)
-      ON DUPLICATE KEY UPDATE t411user=VALUES(t411user), t411pass=VALUES(t411pass)");
-    $statement->bindParam(':uid', $uid);
-    $statement->bindParam(':user', $user);
-    $statement->bindParam(':pass', $password);
-    $statement->execute();
-
-    $statement->closeCursor();
+    return $link;
   }
 
   public function getCredentials() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+    $link = $this->connect();
 
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $statement = $link->prepare("SELECT * FROM identifiants WHERE uid = :uid");
-    $statement->bindParam(':uid', $this->uid);
-    $statement->execute();
-
-    $result = $statement->fetch(PDO::FETCH_OBJ);
-    $statement->closeCursor();
+    $statement = $link->query("SELECT * FROM `identifiants` AS i INNER JOIN `servers` AS s ON i.uid = s.uid INNER JOIN `autodownload` AS a ON i.uid = s.uid GROUP BY i.uid");
+    $result = $statement->fetchAll(PDO::FETCH_OBJ);
+    $link = null;
 
     return $result;
   }
 
-  public function addSerie($name, $saison, $current, $last, $langage) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+  function getLogins() {
+    $link = $this->connect();
 
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $statement = $link->query("SELECT * FROM identifiants", PDO::FETCH_OBJ);
+    $result = $statement->fetchAll(PDO::FETCH_OBJ);
+    $statement = null;
+    $link = null;
 
-    $statement = $link->prepare("INSERT INTO autodownload(uid, name, saison, current, last, language)
-      VALUES(:uid, :name, :saison, :current, :last, :language)
-      ON DUPLICATE KEY UPDATE uid=VALUES(uid), name=VALUES(name), saison=VALUES(saison), current=VALUES(current), last=VALUES(last), language=VALUES(language)");
+    return $result;
+  }
+
+  public function storeCredentials($uid, $username, $password) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("INSERT INTO identifiants(uid, t411username, t411password)
+      VALUES(:uid, :username, :pass)
+      ON DUPLICATE KEY UPDATE t411username=VALUES(t411username), t411password=VALUES(t411password)");
+    $statement->bindParam(':uid', $uid);
+    $statement->bindParam(':username', $username);
+    $statement->bindParam(':pass', $password);
+    $statement->execute();
+
+    $statement = null;
+    $link = null;
+  }
+
+  public function getSeedbox($id) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("SELECT * FROM servers WHERE uid = :uid AND id = :id");
     $statement->bindParam(':uid', $this->uid);
+    $statement->bindParam(':id', $id);
+    $statement->execute();
+
+    $result = $statement->fetch(PDO::FETCH_OBJ);
+    $statement = null;
+    $link = null;
+
+    return $result;
+  }
+
+  public function getSeedboxes() {
+    $link = $this->connect();
+
+    $statement = $link->prepare("SELECT * FROM servers WHERE uid = :uid");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->execute();
+
+    $result = $statement->fetchAll(PDO::FETCH_OBJ);
+    $statement = null;
+    $link = null;
+
+    return $result;
+  }
+
+  public function getTransmissionServers() {
+    $link = $this->connect();
+
+    $statement = $link->prepare("SELECT * FROM servers WHERE uid = :uid AND type = 'transmission'");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->execute();
+
+    $result = $statement->fetchAll(PDO::FETCH_OBJ);
+    $statement = null;
+    $link = null;
+
+    return $result;
+  }
+
+  public function getNasServers() {
+    $link = $this->connect();
+
+    $statement = $link->prepare("SELECT * FROM servers WHERE uid = :uid AND type = 'synology'");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->execute();
+
+    $result = $statement->fetchAll(PDO::FETCH_OBJ);
+    $statement = null;
+    $link = null;
+
+    return $result;
+  }
+
+  public function getSeries() {
+    $link = $this->connect();
+
+    $statement = $link->prepare("SELECT * FROM autodownload WHERE uid = :uid AND current != last");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->execute();
+
+    $result = $statement->fetchAll(PDO::FETCH_OBJ);
+    $statement = null;
+    $link = null;
+
+    return $result;
+  }
+
+  public function addSerie($server, $name, $season, $current, $last, $langage) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("INSERT INTO autodownload(uid, server, name, season, current, last, language)
+      VALUES(:uid, :server, :name, :season, :current, :last, :language)");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->bindParam(':server', $server);
     $statement->bindParam(':name', $name);
-    $statement->bindParam(':saison', $saison);
+    $statement->bindParam(':season', $season);
     $statement->bindParam(':last', $last);
     $statement->bindParam(':current', $current);
     $statement->bindParam(':language', $langage);
     $statement->execute();
 
-    $statement->closeCursor();
-  }
-
-  public function getSeries() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $statement = $link->prepare("SELECT * FROM autodownload WHERE uid = :uid");
-    $statement->bindParam(':uid', $this->uid);
-    $statement->execute();
-
-    $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
-
-    return $result;
-  }
-
-  public function isNotSelectable($uid) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $statement = $link->prepare("SELECT * FROM autodownload WHERE uid = :uid");
-    $statement->bindParam(':uid', $uid);
-    $statement->execute();
-
-    $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
-
-    return empty($result) ? true : false;
-  }
-
-  function getLogins() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $statement = $link->prepare("SELECT * FROM identifiants");
-    $statement->execute();
-
-    $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
-
-    return $result;
+    $statement = null;
+    $link = null;
   }
 
   public function updateSerie($id, $episode) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $link = $this->connect();
 
     $statement = $link->prepare("UPDATE autodownload SET current = :current WHERE id = :id AND uid = :uid");
     $statement->bindParam(':current', $episode);
@@ -115,29 +148,75 @@ class User extends Torrent {
     $statement->bindParam(':uid', $this->uid);
     $statement->execute();
 
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
-  public function dropDB($duree) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+  public function deleteSerie($id) {
+    $link = $this->connect();
 
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $statement = $link->prepare("TRUNCATE TABLE `$duree`");
+    $statement = $link->prepare("DELETE FROM autodownload WHERE id = :id AND uid = :uid");
+    $statement->bindParam(':id', $id);
+    $statement->bindParam(':uid', $this->uid);
     $statement->execute();
 
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
+  }
+
+  public function getDownloadQueue() {
+    $link = $this->connect();
+
+    $statement = $link->prepare("SELECT * FROM downloadqueue");
+    $statement->execute();
+    $result = $statement->fetchAll(PDO::FETCH_OBJ);
+
+    $statement = null;
+    $link = null;
+    return $result;
+  }
+
+  public function addDownloadQueue($idserv, $server, $hash) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("INSERT INTO downloadqueue(uid, idserv, server, hash)
+      VALUES(:uid, :idserv, :server, :hash)");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->bindParam(':idserv', $idserv);
+    $statement->bindParam(':server', $server);
+    $statement->bindParam(':hash', $hash);
+    $statement->execute();
+
+    $statement = null;
+    $link = null;
+  }
+
+  public function deleteFromQueue($id) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("DELETE FROM `downloadqueue` WHERE id = :id AND uid = :uid");
+    $statement->bindParam(':id', $id);
+    $statement->bindParam(':uid', $this->uid);
+    $statement->execute();
+
+    $statement = null;
+    $link = null;
+  }
+
+  public function dropDB() {
+    $link = $this->connect();
+
+    $link->query("TRUNCATE TABLE top_day");
+    $link->query("TRUNCATE TABLE top_week");
+    $link->query("TRUNCATE TABLE top_month");
+
+    $link = null;
   }
 
   public function updateTopDB($duree, $contenu) {
-    $this->dropDB($duree);
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+    $link = $this->connect();
 
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    foreach($contenu as $top) {
+    foreach ($contenu as $top) {
       $statement = $link->prepare("INSERT INTO `$duree`(id, category, categoryname, name, rewritename, added, size, times_completed, seeders, leechers)
         VALUES(:id, :category, :categoryname, :name, :rewritename, :added, :size, :times_completed, :seeders, :leechers)");
       $statement->bindParam(':id', $top->id);
@@ -152,40 +231,31 @@ class User extends Torrent {
       $statement->bindParam(':leechers', $top->leechers);
       $statement->execute();
     }
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function getTopFromDB($duree) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+    $link = $this->connect();
 
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+    $allowed = array('top_day', 'top_week', 'top_month');
+    if (in_array($duree, $allowed)) {
+      throw new Exception("NOPE.", 1);      
+    }
 
     $statement = $link->prepare("SELECT * FROM $duree");
     $statement->execute();
 
     $result = $statement->fetchAll(PDO::FETCH_OBJ);
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
+
     return $result;
-  }
-
-  public function deleteSerie($id) {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
-
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $statement = $link->prepare("DELETE FROM autodownload WHERE id = :id AND uid = :uid");
-    $statement->bindParam(':id', $id);
-    $statement->bindParam(':uid', $this->uid);
-    $statement->execute();
-
-    $statement->closeCursor();
   }
 
   public function trySQLConnection() {
     try{
-      $link = new pdo('mysql:host='.parent::DB_HOST.';charset=utf8', parent::DB_USER, parent::DB_PASS, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
+      $link = new PDO('mysql:host='.parent::DB_HOST.';charset=utf8', parent::DB_USER, parent::DB_PASS, array(PDO::ATTR_ERRMODE => PDO::ERRMODE_EXCEPTION));
       return true;
     } catch(PDOException $e){
       return false;
@@ -205,82 +275,138 @@ class User extends Torrent {
     } catch(PDOException $e) {
       return false;
     }
-    $statement->closeCursor();
+    $statement = null;
+    $link = null;
   }
 
   public function createTables() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME.';charset=utf8', parent::DB_USER, parent::DB_PASS);
+    $link = $this->connect();
 
-    $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
-    $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
-
-    $statement = $link->prepare("CREATE TABLE IF NOT EXISTS `identifiants` (
+    $link->query("CREATE TABLE IF NOT EXISTS `identifiants` (
       `uid` int(11) NOT NULL,
-      `t411user` varchar(250) DEFAULT NULL,
-      `t411pass` varchar(250) DEFAULT NULL,
-      `host` varchar(100) DEFAULT NULL,
-      `port` int(11) DEFAULT NULL,
-      `user` varchar(50) DEFAULT NULL,
-      `pass` varchar(250) DEFAULT NULL,
+      `t411username` varchar(250) DEFAULT NULL,
+      `t411password` varchar(250) DEFAULT NULL,
       `email` varchar(250) DEFAULT NULL,
       UNIQUE KEY `uid` (`uid`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-    $statement->execute();
 
-    $statement = $link->prepare("CREATE TABLE IF NOT EXISTS `dailytop` (
-      `id` int(11) DEFAULT NULL,
-      `category` int(11) DEFAULT NULL,
-      `categoryname` varchar(50) DEFAULT NULL,
-      `name` varchar(500) DEFAULT NULL,
-      `rewritename` varchar(250) DEFAULT NULL,
-      `added` varchar(50) DEFAULT NULL,
-      `size` bigint(11) DEFAULT NULL,
-      `times_completed` int(11) DEFAULT NULL,
-      `seeders` int(11) DEFAULT NULL,
-      `leechers` int(11) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-    $statement->execute();
-
-    $statement = $link->prepare("CREATE TABLE IF NOT EXISTS `weeklytop` (
-      `id` int(11) DEFAULT NULL,
-      `category` int(11) DEFAULT NULL,
-      `categoryname` varchar(50) DEFAULT NULL,
-      `name` varchar(500) DEFAULT NULL,
-      `rewritename` varchar(250) DEFAULT NULL,
-      `added` varchar(50) DEFAULT NULL,
-      `size` bigint(11) DEFAULT NULL,
-      `times_completed` int(11) DEFAULT NULL,
-      `seeders` int(11) DEFAULT NULL,
-      `leechers` int(11) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-    $statement->execute();
-
-    $statement = $link->prepare("CREATE TABLE IF NOT EXISTS `monthlytop` (
-      `id` int(11) DEFAULT NULL,
-      `category` int(11) DEFAULT NULL,
-      `categoryname` varchar(50) DEFAULT NULL,
-      `name` varchar(500) DEFAULT NULL,
-      `rewritename` varchar(250) DEFAULT NULL,
-      `added` varchar(50) DEFAULT NULL,
-      `size` bigint(11) DEFAULT NULL,
-      `times_completed` int(11) DEFAULT NULL,
-      `seeders` int(11) DEFAULT NULL,
-      `leechers` int(11) DEFAULT NULL
-    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
-    $statement->execute();
-
-    $statement = $link->prepare("CREATE TABLE IF NOT EXISTS `autodownload` (
-      `uid` int(11) NOT NULL,
+    $link->query("CREATE TABLE IF NOT EXISTS `servers` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
+      `uid` int(11) NOT NULL,
+      `name` varchar(100) NOT NULL,
+      `type` enum('transmission','synology','local') NOT NULL,
+      `host` varchar(200) DEFAULT NULL,
+      `port` int(11) DEFAULT NULL,
+      `username` varchar(200) DEFAULT NULL,
+      `password` varchar(200) DEFAULT NULL,
+      `folder` varchar(100) DEFAULT NULL,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+    $link->query("CREATE TABLE IF NOT EXISTS `top_day` (
+      `id` int(11) DEFAULT NULL,
+      `category` int(11) DEFAULT NULL,
+      `categoryname` varchar(50) DEFAULT NULL,
+      `name` varchar(500) DEFAULT NULL,
+      `rewritename` varchar(250) DEFAULT NULL,
+      `added` varchar(50) DEFAULT NULL,
+      `size` bigint(11) DEFAULT NULL,
+      `times_completed` int(11) DEFAULT NULL,
+      `seeders` int(11) DEFAULT NULL,
+      `leechers` int(11) DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+    $link->query("CREATE TABLE IF NOT EXISTS `top_week` (
+      `id` int(11) DEFAULT NULL,
+      `category` int(11) DEFAULT NULL,
+      `categoryname` varchar(50) DEFAULT NULL,
+      `name` varchar(500) DEFAULT NULL,
+      `rewritename` varchar(250) DEFAULT NULL,
+      `added` varchar(50) DEFAULT NULL,
+      `size` bigint(11) DEFAULT NULL,
+      `times_completed` int(11) DEFAULT NULL,
+      `seeders` int(11) DEFAULT NULL,
+      `leechers` int(11) DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+    $link->query("CREATE TABLE IF NOT EXISTS `top_month` (
+      `id` int(11) DEFAULT NULL,
+      `category` int(11) DEFAULT NULL,
+      `categoryname` varchar(50) DEFAULT NULL,
+      `name` varchar(500) DEFAULT NULL,
+      `rewritename` varchar(250) DEFAULT NULL,
+      `added` varchar(50) DEFAULT NULL,
+      `size` bigint(11) DEFAULT NULL,
+      `times_completed` int(11) DEFAULT NULL,
+      `seeders` int(11) DEFAULT NULL,
+      `leechers` int(11) DEFAULT NULL
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+    $link->query("CREATE TABLE IF NOT EXISTS `autodownload` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `uid` int(11) NOT NULL,
+      `server` int(11) NOT NULL,
       `name` varchar(100) DEFAULT NULL,
-      `saison` int(11) DEFAULT NULL,
+      `season` int(11) DEFAULT NULL,
       `current` int(11) DEFAULT NULL,
       `last` int(11) DEFAULT NULL,
       `language` int(11) DEFAULT NULL,
       UNIQUE KEY `id` (`id`)
-    ) ENGINE=InnoDB AUTO_INCREMENT=14 DEFAULT CHARSET=utf8");
+    ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
+
+    $link->query("CREATE TABLE IF NOT EXISTS `downloadqueue` (
+      `id` int(11) NOT NULL AUTO_INCREMENT,
+      `uid` int(11) NOT NULL,
+      `idserv` int(11) NOT NULL,
+      `server` int(11) NOT NULL,
+      `hash` varchar(150) NOT NULL,
+      PRIMARY KEY (`id`)
+    ) ENGINE=InnoDB AUTO_INCREMENT=3 DEFAULT CHARSET=utf8");
+    $link = null;
+  }
+
+  public function storeSeedbox($name, $type, $host, $port, $username, $password, $folder) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("INSERT INTO `servers` (uid, name, type, host, port, username, password, folder)
+      VALUES(:uid, :name, :type, :host, :port, :username, :password, :folder)");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->bindParam(':name', $name);
+    $statement->bindParam(':type', $type);
+    $statement->bindParam(':host', $host);
+    $statement->bindParam(':port', $port);
+    $statement->bindParam(':username', $username);
+    $statement->bindParam(':password', $password);
+    $statement->bindParam(':folder', $folder);
     $statement->execute();
+
     $statement->closeCursor();
+  }
+
+  public function storeFolder($type, $folder) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("INSERT INTO `servers` (uid, name, type, folder)
+      VALUES(:uid, :name, :type, :folder)");
+    $statement->bindParam(':uid', $this->uid);
+    $statement->bindParam(':name', $name);
+    $statement->bindParam(':type', $type);
+    $statement->bindParam(':folder', $folder);
+    $statement->execute();
+
+    $statement->closeCursor();
+  }
+
+  public function deleteServer($id) {
+    $link = $this->connect();
+
+    $statement = $link->prepare("DELETE FROM `servers` WHERE id = :id AND uid = :uid");
+    $statement->bindParam(':id', $id);
+    $statement->bindParam(':uid', $this->uid);
+    $statement->execute();
+
+    $statement = null;
+    $link = null;
   }
 
 }

@@ -10,7 +10,7 @@ setcookie('downloaded', '', 1);
 setcookie('uploaded', '', 1);
 
 // bye bye
-header('Location: /login/');
+header('Location: login.php');
 exit;
 
 ?>

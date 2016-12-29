@@ -12,14 +12,14 @@ class T411 {
   const DB_HOST = 'localhost';
   const DB_NAME = '';
   const DB_USER = '';
-  const DB_PASS = '';
-  /** clé de sécurité */
+  const DB_PASS = '+';
+  /** clé de sécurité - à récupérer sur setup.php */
   const KEY = "";
   /** préfixe pour DL Syno -- WIP */
   const DL_PREFIX = '';
   /** nom de domaine */
-  public $domainName = '';
-  /** utilisateur t411 - pour lancer les requêtes cron */
+  public $domainName = 'domain.tld';
+  /** utilisateur t411 */
   CONST T411USER = '';
 
   /** variable de classe */
@@ -32,6 +32,7 @@ class T411 {
   public $comments;
   public $hash;
   public $nfo;
+  public $flagged;
 
   /**
    * Constructeur de la classe
@@ -42,7 +43,7 @@ class T411 {
    * @param bool $connected
    */
   function __construct($connected = true) {
-    if($connected) {
+    if ($connected) {
       $this->token = isset($_COOKIE['token']) ? $_COOKIE['token'] : $this->login();
       $this->uid = isset($_COOKIE['token']) ? $this->getUid($this->token) : null;
       isset($_COOKIE['token']) && !isset($_COOKIE['username']) ? $this->genDetailsCookie() : null;
@@ -71,7 +72,7 @@ class T411 {
    * @param array $array l'array json_décodé qu'on obtiens en réponse d'une requête
    * @return array
    */
-  public function standarsize($array) {
+  public function standardize($array) {
     return array_key_exists('torrents', $array) ? $array->torrents : $array;
   }
 
@@ -98,7 +99,7 @@ class T411 {
    */
   public function cleanArray($array) {
     foreach ($array as $key => $value) {
-      if(!is_object($value)) { unset($array[$key]); }
+      if (!is_object($value)) { unset($array[$key]); }
     }
     return array_values($array);
   }
@@ -147,10 +148,10 @@ class T411 {
    * Les cookies ont une durée de vie de 2h pour éviter le flood sur l'API
    */
   private function genDetailsCookie() {
-    $this->getUserInfo();
-    setcookie('username', $this->userinfo->username, time()+7200);
-    setcookie('downloaded', $this->formatBytes($this->userinfo->downloaded), time()+7200);
-    setcookie('uploaded', $this->formatBytes($this->userinfo->uploaded), time()+7200);
+    $userinfo = $this->getUserInfo();
+    setcookie('username', $userinfo->username, time()+7200);
+    setcookie('downloaded', $this->formatBytes($userinfo->downloaded), time()+7200);
+    setcookie('uploaded', $this->formatBytes($userinfo->uploaded), time()+7200);
     header('Refresh: 0');
     exit;
   }
@@ -182,6 +183,7 @@ class T411 {
     unset($raw[0]);
 
     foreach ($raw as $value) {
+      if (stripos($this->scrape($value, '<p>', '</p>'), 'hadopi') !== false) { $this->flagged = true; }
       $date = explode('>', $this->scrape($value, '/users/comment/?id=', '</a>'));
       $comments[] = (object)['pseudo' => $this->scrape($value, 'title="', '"'), "date" => date_format(date_create($date[1]), 'd/m/Y'), 'texte' => $this->scrape($value, '<p>', '</p>')];
     }

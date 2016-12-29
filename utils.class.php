@@ -1,19 +1,19 @@
 <?php
-require_once __DIR__ . '/' . 'transmission.class.php';
+require_once __DIR__ . '/' . 'servers.class.php';
 
-class Utils extends Transmission2 {
+class Utils extends Servers {
   public function login() {
-    header('Location: /login/');
+    header('Location: login.php');
     exit;
   }
 
   public function logout() {
-    header('Location: /logout/');
+    header('Location: logout.php');
     exit;
   }
 
   public function home() {
-    header('Location: /index.php');
+    header('Location: index.php');
     exit;
   }
 
@@ -32,7 +32,7 @@ class Utils extends Transmission2 {
     $start = $current > 3 ? $current-2 : 1;
     $end = $total >= ($current+2)*50 ? $start+4 : ceil($total/50);
     for ($i = $start; $i <= $end; $i++) {
-      echo '          <li' . ($current == $i ? ' class="active"' : null) . '><a href="/index.php?'.$args.'&page='.$i.'">'.$i.'</a></li>'."\n";
+      echo '          <li' . ($current == $i ? ' class="active"' : null) . '><a href="index.php?'.$args.'&page='.$i.'">'.$i.'</a></li>'."\n";
     }
   }
 
@@ -79,46 +79,43 @@ class Utils extends Transmission2 {
   }
 
   /**
-   * Fonctions pour chiffer/déchiffrer le contenu enregistré en base
+   * Fonctions pour chiffer/déencrypt le contenu enregistré en base
    * Ce n'est pas la solution idéale, mais je ne peux pas hasher le contenu
    * Puisque il doit être déchiffré pour lancer les requêtes
-   *
-   * Source: stackoverflow.com/questions/1289061/best-way-to-use-php-to-encrypt-and-decrypt-passwords
    */
-  public function chiffrer($string) {
-    $iv = mcrypt_create_iv(
-      mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC),
-      MCRYPT_DEV_URANDOM
+  public function encrypt($message) {
+    if (mb_strlen(parent::KEY, '8bit') !== 32) {
+      throw new Exception("Needs a 256-bit key!");
+    }
+    $ivsize = openssl_cipher_iv_length('aes-256-cbc');
+    $iv = openssl_random_pseudo_bytes($ivsize);
+
+    $ciphertext = openssl_encrypt(
+      $message,
+      'aes-256-cbc',
+      parent::KEY,
+      OPENSSL_RAW_DATA,
+      $iv
     );
 
-    $encrypted = base64_encode(
-      $iv .
-      mcrypt_encrypt(
-        MCRYPT_RIJNDAEL_128,
-        hash('sha256', pack('H*', parent::KEY), true),
-        $string,
-        MCRYPT_MODE_CBC,
-        $iv
-      )
-    );
-  return $encrypted;
+    return $iv . $ciphertext;
   }
 
-  public function dechiffrer($string) {
-    $data = base64_decode($string);
-    $iv = substr($data, 0, mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC));
+  public function decrypt($message) {
+    if (mb_strlen(parent::KEY, '8bit') !== 32) {
+      throw new Exception("Needs a 256-bit key!");
+    }
+    $ivsize = openssl_cipher_iv_length('aes-256-cbc');
+    $iv = mb_substr($message, 0, $ivsize, '8bit');
+    $ciphertext = mb_substr($message, $ivsize, null, '8bit');
 
-    $decrypted = rtrim(
-    mcrypt_decrypt(
-      MCRYPT_RIJNDAEL_128,
-      hash('sha256', pack('H*', parent::KEY), true),
-      substr($data, mcrypt_get_iv_size(MCRYPT_RIJNDAEL_128, MCRYPT_MODE_CBC)),
-      MCRYPT_MODE_CBC,
+    return openssl_decrypt(
+      $ciphertext,
+      'aes-256-cbc',
+      parent::KEY,
+      OPENSSL_RAW_DATA,
       $iv
-    ),
-    "\0"
-  );
-  return $decrypted;
+    );
   }
 }
 

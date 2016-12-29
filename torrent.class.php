@@ -24,6 +24,8 @@ class Torrent extends T411 {
   public $langage;
   public $saison;
   public $serie = null;
+  public $liste = array();
+  public $show = array();
 
   function __construct($connected = true) {
     T411::__construct($connected);
@@ -32,6 +34,7 @@ class Torrent extends T411 {
   /**
    * Envoie une requête POST sur l'api T411 avec les identifiants récupéres sur la page de login
    * Si la requête réussit, stocke le token dans un cookie et passe à la suite
+   * POST /auth
    *
    * @param string $user
    * @param string $pass
@@ -51,13 +54,13 @@ class Torrent extends T411 {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     $this->reponse = json_decode(curl_exec($ch));
-    if(array_key_exists('token', $this->reponse)) {
+    if (array_key_exists('token', $this->reponse)) {
       setcookie('token', $this->reponse->token, $ttl, '/');
-      $this->storeCredentials($this->getUid($this->reponse->token), $this->chiffrer($user), $this->chiffrer($pass));
+      $this->storeCredentials($this->getUid($this->reponse->token), $this->encrypt($user), $this->encrypt($pass));
       header('Location: /');
     } else {
       return isset($this->reponse->error) ? $this->reponse->error : 'erreur';
-      header('Location: /login/');
+      header('Location: login.php');
     }
     exit;
   }
@@ -65,6 +68,7 @@ class Torrent extends T411 {
   /**
    * Connexion en CLI, envoie une requête POST sur l'api T411 avec les identifiants récupéres en base
    * Si la requête réussit, stocke le token et l'uid dans un objet
+   * POST /auth
    *
    * @param string $user
    * @param string $pass
@@ -83,7 +87,7 @@ class Torrent extends T411 {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
 
     $this->reponse = json_decode(curl_exec($ch));
-    if(array_key_exists('token', $this->reponse)) {
+    if (array_key_exists('token', $this->reponse)) {
       $this->token = $this->reponse->token;
       $this->uid = $this->getUid($this->token);
     }
@@ -95,7 +99,7 @@ class Torrent extends T411 {
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
     $result = curl_exec($ch);
-    $this->userinfo = json_decode($result);
+    return json_decode($result);
   }
 
   /** @todo all here */
@@ -111,13 +115,14 @@ class Torrent extends T411 {
   /**
    * Envoie le requête de recherche avec les arguments donnés
    * Limite laissée à 5000 par défaut
+   * GET /torrent/search/{query}?limit=5000=cid={querystring}
    */
   public function torrentSearch() {
     $ch = curl_init(self::API_URL . '/torrents/search/' . urlencode($this->query) . '?limit=5000&cid=' . $this->querystring);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
     $result = curl_exec($ch);
-    $this->search = $this->cleanArray($this->standarsize(json_decode($result)));
+    $this->search = $this->cleanArray($this->standardize(json_decode($result)));
     $this->search = empty($this->order) ? $this->search : $this->sortArray($this->search);
   }
 
@@ -127,9 +132,9 @@ class Torrent extends T411 {
    * Deux requêtes GET sont envoyées simultanément, une cherchant tous les épisodes
    * Correspondant à la saison demandée l'autre le pack intégral
    */
-  public function tvShowSearch() {
-    $ch1 = curl_init(self::API_URL . '/torrents/search/' . urlencode($this->serie) . '?limit=5000&cid=433&term[51][]=' . $this->langage . '&term[45][]=' . (967+$this->saison));
-    $ch2 = curl_init(self::API_URL . '/torrents/search/' . urlencode($this->serie) . '?limit=5000&cid=433&term[46][]=936&term[45][]=' . (967+$this->saison));
+  public function searchTVShow($serie, $saison, $langage) {
+    $ch1 = curl_init(self::API_URL . '/torrents/search/' . urlencode($serie) . '?limit=5000&cid=433&term[51][]=' . $langage . '&term[45][]=' . (967+$saison));
+    $ch2 = curl_init(self::API_URL . '/torrents/search/' . urlencode($serie) . '?limit=5000&cid=433&term[46][]=936&term[45][]=' . (967+$saison));
     curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch1, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
@@ -145,8 +150,8 @@ class Torrent extends T411 {
       curl_multi_exec($mh, $running);
     } while ($running);
 
-    $this->tvsearch = $this->sortArray($this->standarsize(json_decode(curl_multi_getcontent($ch1))));
-    $this->tvpack = $this->sortArray($this->standarsize(json_decode(curl_multi_getcontent($ch2))));
+    $this->tvsearch = $this->sortArray($this->standardize(json_decode(curl_multi_getcontent($ch1))));
+    $this->tvpack = $this->sortArray($this->standardize(json_decode(curl_multi_getcontent($ch2))));
   }
 
 
@@ -184,74 +189,87 @@ class Torrent extends T411 {
 
 
   /**
-   * Récupère les détails
+   * Récupère les détails d'un torrent
    * GET /torrents/details/{id}
    */
-  public function getDetails() {
-    $ch = curl_init(self::API_URL . '/torrents/details/' . $this->id);
+  public function getDetails($id) {
+    $ch = curl_init(self::API_URL . '/torrents/details/' . $id);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
     $result = curl_exec($ch);
     $this->details = json_decode($result);
-    if(!empty($this->details->name)) {
-      $this->getMoreDetails();
+    return json_decode($result);
+  }
+
+  /**
+   * Obtient tous les détails nécessaires pour l'afficher dans la page /details/{id}/
+   * GET /torrents/search/{query}
+   * GET /torrents?id={id}
+   * GET /torrents/nfo?id={id}
+   */
+  public function getFullDetails($id) {
+    $this->getDetails($id);
+    if (!empty($this->details->name)) {
+      // construit les requêtes individuellement, sans les éxécuter
+      $ch1 = curl_init(self::API_URL . '/torrents/search/"' . urlencode($this->details->name) . '"');
+      $ch2 = curl_init(self::WEB_URL . '/torrents?id=' . $id);
+      $ch3 = curl_init(self::WEB_URL . '/torrents/nfo?id=' . $id);
+      curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch1, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
+      curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
+      curl_setopt($ch2, CURLOPT_USERAGENT, 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36');
+      curl_setopt($ch3, CURLOPT_RETURNTRANSFER, true);
+
+      $mh = curl_multi_init();
+      curl_multi_add_handle($mh, $ch1);
+      curl_multi_add_handle($mh, $ch2);
+      curl_multi_add_handle($mh, $ch3);
+
+      // éxécute toutes les requêtes simultanément
+      $running = null;
+      do {
+        curl_multi_exec($mh, $running);
+      } while ($running);
+
+      $this->search = json_decode(curl_multi_getcontent($ch1));
+      $this->web = curl_multi_getcontent($ch2);
+      $this->nfo = curl_multi_getcontent($ch3);
+      $this->nfo = $this->scrape($this->nfo, '<pre>','</pre>');
+      $this->loadHash();
+      $this->loadComments();
     }
   }
 
-  public function getMoreDetails() {
-    // construit les requêtes individuellement, sans les éxécuter
-    $ch1 = curl_init(self::API_URL . '/torrents/search/"' . urlencode($this->details->name) . '"');
-    $ch2 = curl_init(self::WEB_URL . '/torrents?id=' . $this->id);
-    $ch3 = curl_init(self::WEB_URL . '/torrents/nfo?id=' . $this->id);
-    curl_setopt($ch1, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch1, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
-    curl_setopt($ch2, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch2, CURLOPT_USERAGENT, 'Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/53.0.2785.143 Safari/537.36');
-    curl_setopt($ch3, CURLOPT_RETURNTRANSFER, true);
-
-    $mh = curl_multi_init();
-    curl_multi_add_handle($mh, $ch1);
-    curl_multi_add_handle($mh, $ch2);
-    curl_multi_add_handle($mh, $ch3);
-
-    // éxécute toutes les requêtes simultanément
-    $running = null;
-    do {
-      curl_multi_exec($mh, $running);
-    } while ($running);
-
-    $this->search = json_decode(curl_multi_getcontent($ch1));
-    $this->web = curl_multi_getcontent($ch2);
-    $this->nfo = curl_multi_getcontent($ch3);
-    $this->nfo = $this->scrape($this->nfo, '<pre>','</pre>');
-    $this->loadHash();
-    $this->loadComments();
-  }
-
-  public function evalseries($input, $hdonly = false) {
-    $a = $s = $size = $torrents = [];
-
+  /**
+   * Construit la liste des épisodes, trié par poids et par épisode
+   * Prend en charge les vidéos 720p/1080p et 4K/UHD
+   */
+  public function evalseries($serie, $input, $saison, $hdonly = true) {
+    //echo $input . '<br>';
+    //echo $saison . '<br>' . '<pre>'; print_r(json_decode(json_encode($input))); exit;
     foreach ($input as $key => $value) {
-      for ($i = 1; $i <= 24; $i++) {
+      for ($i = 1; $i <= 30; $i++) {
         $i = $i < 10 ? 0 . $i : $i;
-          stripos($value->name, 'S'.$this->saison.'E'.$i) !== false && $value->size < 3000000000 ? $a[$key]=(array)$value AND $a[$key]['episode']=$i : null;
+          (stripos($value->name, 'S'.$saison.'E'.$i) !== false) ? $this->liste[$key]=(array)$value AND $this->liste[$key]['episode']=$i : null;
       }
     }
 
-    foreach ($a as $key => $value) {
-      !array_keys(array_column($torrents, 'episode'), $value['episode']) && (stripos($this->cleanTitle($value['name']), $this->cleanTitle(urldecode($this->serie)) . '.S' . $this->saison) !== false) && (stripos($value['name'], '1080') !== false) ? $torrents[$value['episode']] = $value : null;
-    }
+    $this->buildList($serie, $this->liste, $saison, '2160p');
+    $this->buildList($serie, $this->liste, $saison, '1080p');
+    $this->buildList($serie, $this->liste, $saison, '720p');
 
-    foreach ($a as $key => $value) {
-      !array_keys(array_column($torrents, 'episode'), $value['episode']) && (stripos($this->cleanTitle($value['name']), $this->cleanTitle(urldecode($this->serie)) . '.S' . $this->saison) !== false) && (stripos($value['name'], '720') !== false) ? $torrents[$value['episode']] = $value : null;
-    }
-
-    if(!$hdonly){
-      foreach ($a as $key => $value) {
-        !array_keys(array_column($torrents, 'episode'), $value['episode']) ? $torrents[$value['episode']] = $value AND $torrents[$value['episode']]['fallback'] = 'true' : null;
+    if (!$hdonly) {
+      foreach ($this->liste as $key => $value) {
+        !array_keys(array_column($this->show, 'episode'), $value['episode']) ? $this->show[$value['episode']] = $value AND $this->show[$value['episode']]['fallback'] = 'true' : null;
       }
     }
-  return $torrents;
+  return $this->show;
+  }
+
+  public function buildList($serie, $array, $saison, $quality = null) {
+    foreach ($array as $key => $value) {
+      !array_keys(array_column($this->show, 'episode'), $value['episode']) && (stripos($this->cleanTitle($value['name']), $this->cleanTitle(urldecode($serie)) . '.S' . $saison) !== false) && (stripos($value['name'], $quality) !== false) ? $this->show[$value['episode']] = $value : null;
+    }
   }
 
   /**
@@ -261,12 +279,12 @@ class Torrent extends T411 {
    * Ou écrit dans un fichier pour être téléchargé depuis le navigateur.
    * GET /torrents/download/{id}
    */
-  public function getBase64Torrent() {
-    $ch = curl_init(self::API_URL . '/torrents/download/' . $this->id);
+  public function getBase64Torrent($id) {
+    $ch = curl_init(self::API_URL . '/torrents/download/' . $id);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
     curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
     $result = curl_exec($ch);
-    $this->base64 = base64_encode($result);
+    return base64_encode($result);
   }
 }
 

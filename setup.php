@@ -5,7 +5,6 @@ $fail = null;
 $extension = array(
   'curl',
   'ctype',
-  'mcrypt',
   'openssl',
   'pdo_mysql',
   'xml'
@@ -27,7 +26,7 @@ if (version_compare(phpversion(), '5.5', '<')) {
 
 echo 'Vérifications des extensions:<br>';
 foreach($extension as $value) {
-  if(extension_loaded($value)) {
+  if (extension_loaded($value)) {
     echo '-- Extension ' . $value . ': <span style=color:green>installée</span><br>';
   } else {
     echo '-- Extension ' . $value . ': <span style=color:red>manquante</span><br>';
@@ -35,13 +34,13 @@ foreach($extension as $value) {
   }
 }
 
-if($fail) { echo "<br>Veuillez <span style=color:red>installer les extensions nécessaires</span> avant de continuer."; exit; }
+if ($fail) { echo "<br>Veuillez <span style=color:red>installer les extensions nécessaires</span> avant de continuer."; exit; }
 
-if(empty(Utils::KEY)) {
+if (empty(Utils::KEY)) {
   echo "<br>Clé de sécurité: <span style=color:red>non insérée</span><br>";
-  echo bin2hex(openssl_random_pseudo_bytes(32))  . '<br>';  
+  echo bin2hex(openssl_random_pseudo_bytes(32))  . '<br>';
   $fail = true;
-} elseif(strlen(Utils::KEY) != 64) {
+} elseif (mb_strlen(Utils::KEY, '8bit') != 32) {
   echo "<br>Clé de chiffrement au mauvais format.<br> Veuillez utiliser une clé de 32 octets comme ci-dessous pour un chiffrement 256bits<br>";
   echo bin2hex(openssl_random_pseudo_bytes(32))  . '<br>';
   $fail = true;
@@ -51,20 +50,20 @@ if(empty(Utils::KEY)) {
 
 echo '<br>';
 
-if(empty(T411::DB_USER) && empty(T411::DB_PASS) && empty(T411::DB_PASS)) {
+if (empty(T411::DB_USER) && empty(T411::DB_PASS) && empty(T411::DB_PASS)) {
   echo "Identifiants MySQL: <span style=color:red>non insérés</span><br>";
 } else {
   echo "identifiants MySQL: <span style=color:green>insérés</span><br>";
-  if($config->trySQLConnection() === false) {
+  if ($config->trySQLConnection() === false) {
     echo "-- Connexion MySQL: <span style=color:red>échouée, impossible de continuer.</span><br>";
     exit;
   } else {
     echo "-- Connexion MySQL: <span style=color:green>réussie</span><br>";
-    if($config->createDB()) {
+    if ($config->createDB()) {
       echo "---- Création de la base de donnée: <span style=color:green>réussie</span><br>";
       $config->createTables();
     } else {
-      echo "---- Création de la base de donnée: <span style=color:red>échouée</span><br>";      
+      echo "---- Création de la base de donnée: <span style=color:red>échouée</span><br>";
     }
   }
 }

@@ -11,19 +11,8 @@ class Mailing extends Utils {
 
   public function __construct() {
     $this->cr = php_sapi_name() == 'cli' ? "\n" : "<br>";
-    $this->users = $this->getLogins();
-    $this->getUsers();
+    $this->users = $this->getCredentials();
     $this->getSeriz();
-  }
-
-  /**
-   * On ne garde que les utilisateurs
-   * qui ont quelque chose à télécharger
-   */
-  public function getUsers(){
-    foreach ($this->users as $key => $value) {
-      if($this->isNotSelectable($value->uid)) { unset($this->users[$key]); }
-    }
   }
 
   public function getSeriz() {
@@ -43,61 +32,52 @@ class Mailing extends Utils {
       $this->message = null;
       $this->altmessage = null;
 
-      $this->CliAuth($this->dechiffrer($login->t411user), $this->dechiffrer($login->t411pass));
+      $this->CliAuth($this->decrypt($login->t411username), $this->decrypt($login->t411password));
 
-      if(!isset($this->token)) { break; }
-      echo '-- user -> ' . $this->dechiffrer($login->t411user) . $this->cr;
+      if (!isset($this->token)) { break; }
+      echo '-- user -> ' . $this->decrypt($login->t411username) . $this->cr;
       echo '---- token -> ' . $this->token . $this->cr;
       $this->series = $this->getSeries();
 
       foreach ($this->series as $key => $value) {
-        echo '------ série ' . $key . ' -> ' . $value->name . ' (saison ' . $value->saison . ' - épisode ' . $value->current . ')' . $this->cr;
+        echo '------ série ' . $key . ' -> ' . $value->name . ' (saison ' . $value->season . ' - épisode ' . $value->current . ')' . $this->cr;
         $this->torrents[$key] = array();
         $this->query = $value->name;
-        $this->querystring = '?limit=5000&cid=433&term[51][]=' . $value->language . '&term[45][]=' . (967+$value->saison);
+        $this->querystring = '?limit=5000&cid=433&term[51][]=' . $value->language . '&term[45][]=' . (967+$value->season);
         $this->torrentSearch();
         $this->requete[] = $this->search;
       }
 
-      $this->requete = json_decode(json_encode($this->requete), true);
-
       foreach ($this->series as $key => $value) {
-        foreach ($this->requete[$key] as $cle => $valeur) {
-          for ($i = $value->current; $i <= $value->last; $i++) {
-            $i = $i < 10 ? 0 . $i : $i;
-            stripos($valeur['name'], 'S'.sprintf('%02d',$value->saison).'E'.$i) !== false && $valeur['size'] < 5000000000 ? $this->resultListe[$key][$cle] = $valeur AND $this->resultListe[$key][$cle]['episode']=$i : null;
-          }
+        if (empty($this->requete[$key]) || $value->current == $value->last) {
+          unset($this->requete[$key], $this->series[$key], $this->torrents[$key]);
         }
       }
 
+      $this->requete = array_values($this->requete);
+      $this->series = array_values($this->series);
+      $this->torrents = array_values($this->torrents);
+
       foreach ($this->series as $key => $value) {
-        if(empty($this->resultListe[$key])) { unset($this->resultList[$key]); unset($this->series[$key]); unset($this->torrents[$key]); break; };
+        $this->torrents[$key][] = $this->evalseries($value->name, $this->requete[$key], sprintf('%02d', $value->season));
       }
 
       foreach ($this->series as $key => $value) {
-        foreach ($this->resultListe[$key] as $cle => $valeur) {
-          !array_keys(array_column($this->torrents[$key], 'episode'), $valeur['episode']) && $valeur['episode'] >= $value->current && (stripos($this->cleanTitle($valeur['name']), $this->cleanTitle(urldecode($value->name)) . '.S' . sprintf('%02d', $value->saison)) !== false) && (stripos($valeur['name'], '1080') !== false) ? $this->torrents[$key][] = $valeur : null;
-        }
-      }
-
-      foreach ($this->series as $key => $value) {
-        foreach ($this->resultListe[$key] as $cle => $valeur) {
-          !array_keys(array_column($this->torrents[$key], 'episode'), $valeur['episode']) && $valeur['episode'] >= $value->current && (stripos($this->cleanTitle($valeur['name']), $this->cleanTitle(urldecode($value->name)) . '.S' . sprintf('%02d', $value->saison)) !== false) && (stripos($valeur['name'], '720') !== false) ? $this->torrents[$key][] = $valeur : null;
-        }
-      }
-
-      foreach ($this->series as $key => $value) {
-        array_multisort(array_column($this->torrents[$key], 'episode'), $this->torrents[$key]);
+        array_multisort(array_column($this->torrents[$key][$key], 'episode'), $this->torrents[$key][$key]);
       }
 
       if(!empty($this->torrents)) {
         foreach ($this->series as $key => $value) {
-          foreach ($this->torrents[$key] as $cle => $valeur) {
-            $this->id = $valeur['id'];
-            if($value->current != $value->last && ($value->current != $valeur['episode'] || $value->current == 1) && $this->addTorrent($valeur['id'])){
-              $this->updateSerie($value->id, $valeur['episode']);
-              $this->downloaded[] = $valeur;
-              echo '-------- yeaaaaah ajouté ' . $valeur['name'] . $this->cr;
+          foreach ($this->torrents[$key][$key] as $cle => $valeur) {
+            if($value->current != $value->last && ($value->current != $valeur['episode'] || $value->current == 1)) {
+              try {
+                $this->addTorrent('torrent', (string)$valeur['id'], (string)$value->server);
+                $this->updateSerie($value->id, $valeur['episode']);
+                $this->downloaded[] = $valeur;
+                echo '-------- yeaaaaah ajouté ' . $valeur['name'] . $this->cr;
+              } catch (Exception $e) {
+                echo 'fail -> ' . $e->getMessage() . $this->cr;
+              }
             } else {
               echo '-------- hmmmmmmmmm ' . $valeur['name'] . $this->cr;
             }
@@ -115,7 +95,7 @@ class Mailing extends Utils {
           . 'Liste des fichiers téléchargés:';
 
         foreach ($this->downloaded as $key => $value) {
-        $this->message .= '<li><a href="https://' . $this->domaineName . '/details/' . $value['id'] . '">' . $value['name'] . '</a> (' . $this->formatBytes($value['size']) . ')</li>';
+        $this->message .= '<li><a href="https://' . 'dev.bosc.io' . '/details/' . $value['id'] . '">' . $value['name'] . '</a> (' . $this->formatBytes($value['size']) . ')</li>';
         $this->altmessage .= '  . ' . $value['name'] . ' (' . $this->formatBytes($value['size']) . ')';
         }
 
@@ -125,10 +105,10 @@ class Mailing extends Utils {
         $mail->CharSet = 'UTF-8';
 
         $mail->isSMTP();
-        $mail->Host = $this->domainName;
+        $mail->Host = '';
         $mail->SMTPAuth = true;
-        $mail->Username = 'john@doe.com';
-        $mail->Password = 'changeme';
+        $mail->Username = '';
+        $mail->Password = '';
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
 
@@ -140,9 +120,9 @@ class Mailing extends Utils {
           )
         );
 
-        $mail->setFrom('noreply@' . $this->domainName, 'Alerte Torrent');
-        $mail->addAddress($this->dechiffrer($login->email), $this->dechiffrer($login->t411user));
-        $mail->addReplyTo('noreply@' . $this->domainName, 'Alerte Torrent');
+        $mail->setFrom('noreply@domain.tld', 'Alerte Torrent');
+        $mail->addAddress('matthias@domain.tld', 'Alerte Torrent');
+        $mail->addReplyTo('noreply@domain.tld', 'Alerte Torrent');
         $mail->isHTML(true);
 
         $mail->Subject = count($this->downloaded) . ' torrent' . $pluriel . ' téléchargé' . $pluriel;

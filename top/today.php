@@ -1,7 +1,7 @@
 <?php
 require_once __DIR__ . '/../' . 'utils.class.php';
 $t411 = new Utils;
-$t411->top = $t411->getTopFromDB('dailytop');
+$t411->top = $t411->getTopFromDB('top_day');
 
 $categories = array(
   'Audio' => array(
@@ -73,22 +73,72 @@ $categories = array(
 <html lang="fr">
   <head>
     <meta charset="utf-8" />
-    <title>t412 | top jour</title>
+    <title>t412 - top jour</title>
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
 
-    <link rel="stylesheet" href="/css/bootstrap.min.css">
-    <link rel="stylesheet" href="/css/navbar.css">
+    <link rel="stylesheet" href="../css/bootstrap.min.css">
+    <link rel="stylesheet" href="../css/navbar.css">
   </head>
   <body>
 
   <div class="container">
-<?php require_once __DIR__ . '/../' . 'navbar.php'; ?>
+    <nav class="navbar navbar-default">
+
+      <div class="navbar-header">
+        <button type="button" class="navbar-toggle" data-toggle="collapse" data-target="#myNavbar">
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <a class="navbar-brand" href="../index.php"><?php echo $t411->domainName; ?></a>
+      </div>
+      <div class="collapse navbar-collapse" id="myNavbar">
+        <ul class="nav navbar-nav">
+          <li class="active"><a href="../index.php">Accueil</a></li>
+          <li><a href="../series.php">Séries</a></li>
+          <li class="dropdown">
+            <a class="dropdown-toggle" data-toggle="dropdown" href="#">Top <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="../top/today.php">Jour</a></li>
+              <li><a href="../top/week.php">Semaine</a></li>
+              <li><a href="../top/month.php">Mois</a></li>
+            </ul>
+          </li>
+        </ul>
+        <ul class="nav navbar-nav navbar-right">
+          <form action="../index.php" method="get" class="navbar-form navbar-left" role="search">
+            <div class="input-group">
+              <input type="text" name="search" class="form-control" placeholder="<?php echo isset($search) ? $search : 'Rechercher un torrent'; ?>" value="<?php echo isset($search) ? $search : null; ?>" required>
+              <div class="input-group-btn">
+                <button class="btn btn-default" type="submit"><i class="glyphicon glyphicon-search"></i></button>
+              </div>
+            </div>
+          </form>
+          <li class="dropdown">
+            <a href="#" class="dropdown-toggle" data-toggle="dropdown" role="button" aria-haspopup="true" aria-expanded="false"><?php echo $_COOKIE['username']; ?> <span class="caret"></span></a>
+            <ul class="dropdown-menu">
+              <li><a href="#">
+                <span class="label label-success"><span class="glyphicon glyphicon-arrow-down"></span> <?php echo $_COOKIE['downloaded']; ?></span>
+                <span class="label label-danger"><span class="glyphicon glyphicon-arrow-up"></span> <?php echo $_COOKIE['uploaded']; ?></span>
+              </a></li>
+              <li role="separator" class="divider"></li>
+              <li><a href="../seedbox.php"><span class="glyphicon glyphicon-wrench"></span> Seedbox</a></li>
+              <li><a href="../suivi.php"><span class="glyphicon glyphicon-star"></span> Mes séries</a></li>
+              <li><a href="../downloads.php"><span class="glyphicon glyphicon-download"></span> Téléchargements</a></li>
+              <li role="separator" class="divider"></li>
+              <li><a href="../logout.php"><span class="glyphicon glyphicon-log-out"></span> Déconnexion</a></li>
+            </ul>
+          </li>
+        </ul>
+      </div>
+
+    </nav>
 
 <?php if(empty($t411->top)) { ?>
 
     <div class="jumbotron">
       <h1><small style="color:red">Erreur !</small></h1>
-      <p>La base <i>dailytop</i> est vide. Pensez à <strong>ajouter les tâches cron</strong> sur votre serveur!.</p>
+      <p>La base <i>top_day</i> est vide. Pensez à <strong>ajouter les tâches cron</strong> sur votre serveur!.</p>
     </div>
 
 <?php } else {
@@ -125,7 +175,7 @@ foreach ($array as $topcategory => $subcategories) {
         <tbody>
           <tr>
             <td nowrap class="textcentered"><?php echo $torrents->categoryname; ?></td>
-            <td><a href="/details/<?php echo $torrents->id; ?>"><?php echo $torrents->name; ?></a></td>
+            <td><a href="../details.php?id=<?php echo $torrents->id; ?>"><?php echo $torrents->name; ?></a></td>
             <td nowrap class="textcentered"><?php echo $t411->humanTiming(strtotime($torrents->added)); ?></td>
             <td nowrap class="textcentered"><?php echo  $t411->formatBytes($torrents->size); ?></td>
             <td class="textcentered"><?php echo $torrents->times_completed; ?></td>
@@ -145,7 +195,7 @@ foreach ($array as $topcategory => $subcategories) {
 ?>
 
   </div>
-  <script src="/js/jquery.min.js"></script>
-  <script src="/js/bootstrap.min.js"></script>
+  <script src="../js/jquery.min.js"></script>
+  <script src="../js/bootstrap.min.js"></script>
 </body>
 </html>
