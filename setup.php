@@ -6,6 +6,7 @@ $extension = array(
   'curl',
   'ctype',
   'openssl',
+  'mbstring',
   'pdo_mysql',
   'xml'
 );
