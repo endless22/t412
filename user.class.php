@@ -239,8 +239,8 @@ class User extends Torrent {
     $link = $this->connect();
 
     $allowed = array('top_day', 'top_week', 'top_month');
-    if (in_array($duree, $allowed)) {
-      throw new Exception("NOPE.", 1);      
+    if (!in_array($duree, $allowed)) {
+      throw new Exception("NOPE.", 1);
     }
 
     $statement = $link->prepare("SELECT * FROM $duree");
