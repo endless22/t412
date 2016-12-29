@@ -121,7 +121,7 @@ class Mailing extends Utils {
         );
 
         $mail->setFrom('noreply@domain.tld', 'Alerte Torrent');
-        $mail->addAddress('matthias@domain.tld', 'Alerte Torrent');
+        $mail->addAddress('johndoe@domain.tld', 'Alerte Torrent');
         $mail->addReplyTo('noreply@domain.tld', 'Alerte Torrent');
         $mail->isHTML(true);
 
