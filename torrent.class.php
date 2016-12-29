@@ -102,16 +102,6 @@ class Torrent extends T411 {
     return json_decode($result);
   }
 
-  /** @todo all here */
-  public function getTree() {
-    $ch = curl_init(self::API_URL . '/categories/tree/');
-    curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
-    curl_setopt($ch, CURLOPT_HTTPHEADER, ['Authorization: ' . $this->token]);
-    $result = curl_exec($ch);
-    return json_decode($result);
-  }
-
-
   /**
    * Envoie le requête de recherche avec les arguments donnés
    * Limite laissée à 5000 par défaut
