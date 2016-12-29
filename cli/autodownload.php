@@ -95,7 +95,7 @@ class Mailing extends Utils {
           . 'Liste des fichiers téléchargés:';
 
         foreach ($this->downloaded as $key => $value) {
-        $this->message .= '<li><a href="https://' . 'dev.bosc.io' . '/details/' . $value['id'] . '">' . $value['name'] . '</a> (' . $this->formatBytes($value['size']) . ')</li>';
+        $this->message .= '<li><a href="https://' . 'domain.tld' . '/details/' . $value['id'] . '">' . $value['name'] . '</a> (' . $this->formatBytes($value['size']) . ')</li>';
         $this->altmessage .= '  . ' . $value['name'] . ' (' . $this->formatBytes($value['size']) . ')';
         }
 
