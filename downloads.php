@@ -42,7 +42,7 @@ $naslist = $t411->getNasServers();
 foreach ($reponse as $key => $torrent) {
   $status = $torrent->isFinished() ? 'success' : 'warning';
 ?>
-     <li class="list-group-item list-group-item-<?php echo $status;?> title" data-toggle="collapse" data-target="#<?php echo $value->id . $torrent->getHash();?>" href="#<?php echo $value->id . $torrent->getHash();?>">
+     <li style="cursor:pointer" class="list-group-item list-group-item-<?php echo $status;?> title" data-toggle="collapse" data-target="#<?php echo $value->id . $torrent->getHash();?>" href="#<?php echo $value->id . $torrent->getHash();?>">
         <?php echo $torrent->getName() . "\n"; ?>
         <?php echo '<span class="badge progress-bar-' . $status . '">' . ($status == 'warning' ? $torrent->getPercentDone() . '%' : count($torrent->getFiles())) . '</span>' . "\n"; ?>
         <ul class="nav nav-list collapse" id="<?php echo $value->id . $torrent->getHash();?>">
