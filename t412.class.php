@@ -106,13 +106,22 @@ class T411 {
 
 
   /**
+   * Retourne tous les éléments d'un colonne, d'un objet
+   * @param array $array
+   * @param string $column_name
+   */
+  public function array_column_obj($array, $column_name) {
+    return array_map(function($element) use($column_name){ return $element->$column_name;}, $array);
+  }
+
+  /**
    * Tri un tableau avec une clé spécifiée
    *
    * @param array $array
    * @return array
    */
   public function sortArray($array) {
-    array_multisort(array_column($array, $this->order), $this->sort_order, SORT_FLAG_CASE | SORT_NATURAL, $array);
+    array_multisort($this->array_column_obj($array, $this->order), $this->sort_order, SORT_FLAG_CASE | SORT_NATURAL, $array);
     return $array;
   }
 
