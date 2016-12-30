@@ -57,7 +57,7 @@ class Torrent extends T411 {
     if (array_key_exists('token', $this->reponse)) {
       setcookie('token', $this->reponse->token, $ttl, '/');
       $this->storeCredentials($this->getUid($this->reponse->token), $this->encrypt($user), $this->encrypt($pass));
-      header('Location: /');
+      header('Location: index.php');
     } else {
       return isset($this->reponse->error) ? $this->reponse->error : 'erreur';
       header('Location: login.php');
@@ -93,7 +93,10 @@ class Torrent extends T411 {
     }
   }
 
-  /** @todo all here */
+  /**
+   * Récupère les infos de l'utilisateur
+   * GET /users/profile/{uid}
+   */
   public function getUserInfo() {
     $ch = curl_init(self::API_URL . '/users/profile/' . $this->uid);
     curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
@@ -115,7 +118,6 @@ class Torrent extends T411 {
     $this->search = $this->cleanArray($this->standardize(json_decode($result)));
     $this->search = empty($this->order) ? $this->search : $this->sortArray($this->search);
   }
-
 
   /**
    * Fonction utilisée pour effectuer une recherche sur une série
