@@ -40,11 +40,11 @@ if ($fail) { echo "<br>Veuillez <span style=color:red>installer les extensions n
 
 if (empty(Utils::KEY)) {
   echo "<br>Clé de sécurité: <span style=color:red>non insérée</span><br>";
-  echo bin2hex(openssl_random_pseudo_bytes(16))  . '<br>';
+  echo "Utilisez la clé suivante: " . bin2hex(openssl_random_pseudo_bytes(16))  . '<br>';
   $fail = true;
 } elseif (mb_strlen(Utils::KEY, '8bit') != 32) {
   echo "<br>Clé de chiffrement au mauvais format.<br> Veuillez utiliser une clé de 32 octets comme ci-dessous pour un chiffrement 256bits<br>";
-  echo bin2hex(openssl_random_pseudo_bytes(16))  . '<br>';
+  echo "Utilisez la clé suivante: " . bin2hex(openssl_random_pseudo_bytes(16))  . '<br>';
   $fail = true;
 } else {
  echo "<br>Clé de sécurité: <span style=color:green>OK</span><br>";
@@ -73,8 +73,8 @@ if (empty(T411::DB_USER) && empty(T411::DB_PASS) && empty(T411::DB_PASS)) {
 
 echo "<br><br>Pensez à ajouter les tâches cron nécessaires pour récupérer les tops, et pour le téléchargement automatique (facultatif).<br><pre>";
 echo '0 * * * * /usr/bin/php '  . __DIR__ . '/cli/top.php<br>';
-echo '0 * * * * /usr/bin/php ' . __DIR__ . '/cli/autodownload.php<br></pre>';
-echo '*/10 * * * * /usr/bin/php ' . __DIR__ . '/cli/downloadscheduler.php';
+echo '0 * * * * /usr/bin/php ' . __DIR__ . '/cli/autodownload.php<br>';
+echo '*/10 * * * * /usr/bin/php ' . __DIR__ . '/cli/downloadscheduler.php</pre>';
 
 ?>
   </body>
