@@ -99,9 +99,9 @@ $categories = array(
           <li class="dropdown">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">Top <span class="caret"></span></a>
             <ul class="dropdown-menu">
-              <li><a href="top/today.php">Jour</a></li>
-              <li><a href="top/week.php">Semaine</a></li>
-              <li><a href="top/month.php">Mois</a></li>
+              <li><a href="../top/today.php">Jour</a></li>
+              <li><a href="../top/week.php">Semaine</a></li>
+              <li><a href="../top/month.php">Mois</a></li>
             </ul>
           </li>
         </ul>
