@@ -63,7 +63,7 @@ class Servers extends User {
 
     } elseif ($credentials->type == 'local') {
 
-      $file = new File($credentials->folder, $this->details->name . '.torrent');
+      $file = new File($credentials->folder, $this->details->name . '.torrent', parent::T411USER);
       $file->writeFile($base64);
     }
   }
