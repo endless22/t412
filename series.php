@@ -22,7 +22,7 @@ $langage = isset($_GET['langue']) && ctype_digit($_GET['langue']) ? $_GET['langu
 <?php require_once __DIR__ . '/' . 'navbar.php'; ?>
 
     <ol class="breadcrumb">
-      <li><a href="/">Recherche</a></li>
+      <li><a href="../index.php">Recherche</a></li>
       <li><a><?php echo $search; ?></a></li>
     </ol>
 

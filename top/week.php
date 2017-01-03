@@ -94,8 +94,8 @@ $categories = array(
       </div>
       <div class="collapse navbar-collapse" id="myNavbar">
         <ul class="nav navbar-nav">
-          <li class="active"><a href="/">Accueil</a></li>
-          <li><a href="/series.php">Séries</a></li>
+          <li class="active"><a href="../index.php">Accueil</a></li>
+          <li><a href="../series.php">Séries</a></li>
           <li class="dropdown">
             <a class="dropdown-toggle" data-toggle="dropdown" href="#">Top <span class="caret"></span></a>
             <ul class="dropdown-menu">
@@ -122,11 +122,11 @@ $categories = array(
                 <span class="label label-danger"><span class="glyphicon glyphicon-arrow-up"></span> <?php echo $_COOKIE['uploaded']; ?></span>
               </a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="seedbox/"><span class="glyphicon glyphicon-wrench"></span> Seedbox</a></li>
-              <li><a href="suivi/"><span class="glyphicon glyphicon-star"></span> Mes séries</a></li>
-              <li><a href="downloads/"><span class="glyphicon glyphicon-download"></span> Téléchargements</a></li>
+              <li><a href="../seedbox.php"><span class="glyphicon glyphicon-wrench"></span> Seedbox</a></li>
+              <li><a href="../suivi.php"><span class="glyphicon glyphicon-star"></span> Mes séries</a></li>
+              <li><a href="../downloads.php"><span class="glyphicon glyphicon-download"></span> Téléchargements</a></li>
               <li role="separator" class="divider"></li>
-              <li><a href="logout/"><span class="glyphicon glyphicon-log-out"></span> Déconnexion</a></li>
+              <li><a href="../logout.php"><span class="glyphicon glyphicon-log-out"></span> Déconnexion</a></li>
             </ul>
           </li>
         </ul>
@@ -175,7 +175,7 @@ foreach ($array as $topcategory => $subcategories) {
         <tbody>
           <tr>
             <td nowrap class="textcentered"><?php echo $torrents->categoryname; ?></td>
-            <td><a href="../details.php?id=/<?php echo $torrents->id; ?>"><?php echo $torrents->name; ?></a></td>
+            <td><a href="../details.php?id=<?php echo $torrents->id; ?>"><?php echo $torrents->name; ?></a></td>
             <td nowrap class="textcentered"><?php echo $t411->humanTiming(strtotime($torrents->added)); ?></td>
             <td nowrap class="textcentered"><?php echo  $t411->formatBytes($torrents->size); ?></td>
             <td class="textcentered"><?php echo $torrents->times_completed; ?></td>

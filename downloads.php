@@ -21,8 +21,8 @@ $naslist = $t411->getNasServers();
 <?php require_once __DIR__ . '/' . 'navbar.php'; ?>
 
     <ol class="breadcrumb">
-      <li><a href="/">Torrents</a></li>
-      <li><a href="/downloads/">Mes téléchargements</a></li>
+      <li><a href="../index.php">Torrents</a></li>
+      <li><a href="../downloads.php">Mes téléchargements</a></li>
     </ol>
 
 <?php if (empty($transmissions)) { ?>
@@ -53,9 +53,9 @@ foreach ($reponse as $key => $torrent) {
 <?php if ($_COOKIE['username'] == Utils::T411USER) {
 foreach ($naslist as $nas) {?>
           <ul>
-            <li><a href="/download.php?type=hash&id=<?php echo $value->id; ?>&idserv=<?php echo $nas->id; ?>&data=<?php echo $torrent->getHash(); ?>"><span class="glyphicon glyphicon-cloud-download"></span> Envoyer le torrent complet sur <b><?php echo $t411->decrypt($nas->name); ?></b>.</a></li>
+            <li><a href="download.php?type=hash&id=<?php echo $value->id; ?>&idserv=<?php echo $nas->id; ?>&data=<?php echo $torrent->getHash(); ?>"><span class="glyphicon glyphicon-cloud-download"></span> Envoyer le torrent complet sur <b><?php echo $t411->decrypt($nas->name); ?></b>.</a></li>
 <?php foreach ($torrent->getFiles() as $file) { ?>
-            <li><a href="/download.php?type=link&id=<?php echo $value->id; ?>&idserv=<?php echo $nas->id; ?>&data=<?php echo urlencode($file->getName());?>"><span class="glyphicon glyphicon-download"></span> <?php echo strtr($file->getName(), [$torrent->getName().'/' => '']);?></a> <span class="size">(<?php echo $t411->formatBytes($file->getSize());?>)</span></li>
+            <li><a href="download.php?type=link&id=<?php echo $value->id; ?>&idserv=<?php echo $nas->id; ?>&data=<?php echo urlencode($file->getName());?>"><span class="glyphicon glyphicon-download"></span> <?php echo strtr($file->getName(), [$torrent->getName().'/' => '']);?></a> <span class="size">(<?php echo $t411->formatBytes($file->getSize());?>)</span></li>
 <?php } ?>
           </ul>
 <?php } ?>

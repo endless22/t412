@@ -5,6 +5,10 @@ if (!empty($_POST['name'])) {
   $t411->addSerie($_POST['server'], $_POST['name'], $_POST['season'], $_POST['current'], $_POST['last'], $_POST['langue']);
 }
 
+if (!empty($_GET['delete'])) {
+  $t411->deleteSerie($_GET['delete']);
+}
+
 $state = $t411->getSeedboxes();
 $reponse = $t411->getSeries();
 ?>
@@ -27,6 +31,13 @@ $reponse = $t411->getSeries();
       <li><a href="index.php">Torrents</a></li>
       <li><a href="suivi.php">Mes séries</a></li>
     </ol>
+
+<?php if (!empty($_GET['delete'])) { ?>
+    <div class="alert alert-success alert-dismissible" role="alert">
+      <button type="button" class="close" data-dismiss="alert" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+      Série supprimée avec succès.
+    </div>
+<?php } ?>
 
 <?php if (empty($state)) { ?>
 
@@ -119,7 +130,7 @@ $reponse = $t411->getSeries();
             <td nowrap class="textcentered"><?php echo $value->last;?></td>
             <td nowrap class="textcentered"><?php echo $t411->getLanguage($value->language);?></td>
             <td nowrap class="textcentered"><?php if (isset($state[$key]->name)) { echo $t411->decrypt($state[$key]->name); } ?></td>
-            <td class="textcentered"><a href="/delete/<?php echo $value->id;?>"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span> Supprimer</a></td>
+            <td class="textcentered"><a href="suivi.php?delete=<?php echo $value->id;?>"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span> Supprimer</a></td>
           </tr>
 <?php } ?>
         </tbody>
