@@ -193,6 +193,7 @@ class T411 {
 
     foreach ($raw as $value) {
       if (stripos($this->scrape($value, '<p>', '</p>'), 'hadopi') !== false) { $this->flagged = true; }
+      $value = str_replace('src="/images/smilies', 'src="images/smilies', $value);
       $date = explode('>', $this->scrape($value, '/users/comment/?id=', '</a>'));
       $comments[] = (object)['pseudo' => $this->scrape($value, 'title="', '"'), "date" => date_format(date_create($date[1]), 'd/m/Y'), 'texte' => $this->scrape($value, '<p>', '</p>')];
     }
