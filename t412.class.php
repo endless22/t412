@@ -12,9 +12,9 @@ class T411 {
   const DB_HOST = 'localhost';
   const DB_NAME = '';
   const DB_USER = '';
-  const DB_PASS = '+';
+  const DB_PASS = '';
   /** clé de sécurité - à récupérer sur setup.php */
-  const KEY = "";
+  const KEY = '';
   /** préfixe pour DL Syno -- WIP */
   const DL_PREFIX = '';
   /** nom de domaine */
