@@ -121,7 +121,7 @@ $reponse = $t411->getSeries();
         </thead>
         <tbody>
 
-<?php foreach ($reponse as $key => $value) { ?>
+<?php foreach ($reponse as $value) { ?>
           <tr>
             <td nowrap class="textcentered"><?php echo $value->name;?></td>
             <td class="textcentered"><?php echo $value->season; ?></td>
@@ -129,7 +129,7 @@ $reponse = $t411->getSeries();
             <td nowrap class="textcentered"><?php echo $value->current;?></td>
             <td nowrap class="textcentered"><?php echo $value->last;?></td>
             <td nowrap class="textcentered"><?php echo $t411->getLanguage($value->language);?></td>
-            <td nowrap class="textcentered"><?php if (isset($state[$key]->name)) { echo $t411->decrypt($state[$key]->name); } ?></td>
+            <td nowrap class="textcentered"><?php echo $t411->decrypt($t411->getSeedbox($value->server)->name); ?></td>
             <td class="textcentered"><a href="suivi.php?delete=<?php echo $value->id;?>"><span class="glyphicon glyphicon-remove-circle" aria-hidden="true"></span> Supprimer</a></td>
           </tr>
 <?php } ?>
