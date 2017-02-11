@@ -236,11 +236,11 @@ class Torrent extends T411 {
    * Construit la liste des épisodes, trié par poids et par épisode
    * Prend en charge les vidéos 720p/1080p et 4K/UHD
    */
-  public function evalseries($serie, $input, $saison, $hdonly = true) {
+  public function evalseries($serie, $input, $saison, $hdonly = true, $start = 1, $end = 30) {
     //echo $input . '<br>';
     //echo $saison . '<br>' . '<pre>'; print_r(json_decode(json_encode($input))); exit;
     foreach ($input as $key => $value) {
-      for ($i = 1; $i <= 30; $i++) {
+      for ($i = $start; $i <= $end; $i++) {
         $i = $i < 10 ? 0 . $i : $i;
           (stripos($value->name, 'S'.$saison.'E'.$i) !== false) ? $this->liste[$key]=(array)$value AND $this->liste[$key]['episode']=$i : null;
       }

@@ -59,7 +59,7 @@ class Mailing extends Utils {
       $this->torrents = array_values($this->torrents);
 
       foreach ($this->series as $key => $value) {
-        $this->torrents[$key][] = $this->evalseries($value->name, $this->requete[$key], sprintf('%02d', $value->season));
+        $this->torrents[$key][] = $this->evalseries($value->name, $this->requete[$key], sprintf('%02d', $value->season), true, $value->current, $value->last);
       }
 
       foreach ($this->series as $key => $value) {
