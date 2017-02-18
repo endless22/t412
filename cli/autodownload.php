@@ -59,27 +59,27 @@ class Mailing extends Utils {
       $this->torrents = array_values($this->torrents);
 
       foreach ($this->series as $key => $value) {
-        $this->torrents[$key][] = $this->evalseries($value->name, $this->requete[$key], sprintf('%02d', $value->season), true, $value->current, $value->last);
+        $this->torrents[$key] = $this->evalseries($value->name, $this->requete[$key], sprintf('%02d', $value->season), true, $value->current, $value->last);
       }
 
       foreach ($this->series as $key => $value) {
-        array_multisort(array_column($this->torrents[$key][$key], 'episode'), $this->torrents[$key][$key]);
+        array_multisort(array_column($this->torrents[$key], 'episode'), $this->torrents[$key]);
       }
 
-      if(!empty($this->torrents)) {
+      if (!empty($this->torrents)) {
         foreach ($this->series as $key => $value) {
-          foreach ($this->torrents[$key][$key] as $cle => $valeur) {
-            if($value->current != $value->last && ($value->current != $valeur['episode'] || $value->current == 1)) {
+          foreach ($this->torrents[$key] as $cle => $valeur) {
+            if (sprintf('%02d', $value->current) < $value->last && ($valeur['episode'] > sprintf('%02d', $value->current) || sprintf('%02d', $value->current) == '01')) {
               try {
-                $this->addTorrent('torrent', (string)$valeur['id'], (string)$value->server);
+                $this->addTorrent('torrent', $valeur['id'], $value->server);
                 $this->updateSerie($value->id, $valeur['episode']);
                 $this->downloaded[] = $valeur;
-                echo '-------- yeaaaaah ajouté ' . $valeur['name'] . $this->cr;
+                echo '---------- yeaaaaah ajouté ' . $valeur['name'] . $this->cr;
               } catch (Exception $e) {
                 echo 'fail -> ' . $e->getMessage() . $this->cr;
               }
             } else {
-              echo '-------- hmmmmmmmmm ' . $valeur['name'] . $this->cr;
+              echo '---------- hmmmmmmmmm ' . $valeur['name'] . $this->cr;
             }
           }
         }
