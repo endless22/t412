@@ -85,6 +85,8 @@ class Mailing extends Utils {
         }
       }
 
+      exit;
+
       if(!empty($this->downloaded)) {
 
         $pluriel = count($this->downloaded) > 1 ? 's' : null;
@@ -111,14 +113,6 @@ class Mailing extends Utils {
         $mail->Password = '';
         $mail->SMTPSecure = 'tls';
         $mail->Port = 587;
-
-        $mail->SMTPOptions = array(
-          'ssl' => array(
-            'verify_peer' => false,
-            'verify_peer_name' => false,
-            'allow_self_signed' => false
-          )
-        );
 
         $mail->setFrom('noreply@domain.tld', 'Alerte Torrent');
         $mail->addAddress('johndoe@domain.tld', 'Alerte Torrent');

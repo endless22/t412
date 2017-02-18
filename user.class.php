@@ -17,7 +17,7 @@ class User extends Torrent {
   public function getCredentials() {
     $link = $this->connect();
 
-    $statement = $link->query("SELECT * FROM `identifiants` AS i INNER JOIN `servers` AS s ON i.uid = s.uid INNER JOIN `autodownload` AS a ON i.uid = s.uid GROUP BY i.uid");
+    $statement = $link->query("SELECT * FROM `identifiants` AS i INNER JOIN `servers` AS s ON i.uid = s.uid INNER JOIN `autodownload` AS a ON i.uid = a.uid GROUP BY i.uid");
     $result = $statement->fetchAll(PDO::FETCH_OBJ);
     $link = null;
 
