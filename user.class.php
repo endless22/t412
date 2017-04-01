@@ -7,7 +7,7 @@ class User extends Torrent {
   private $statement;
 
   private function connect() {
-    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME, parent::DB_USER, parent::DB_PASS);
+    $link = new PDO('mysql:host='.parent::DB_HOST.';dbname='.parent::DB_NAME.';charset=utf8', parent::DB_USER, parent::DB_PASS);
     $link->setAttribute(PDO::ATTR_EMULATE_PREPARES, false);
     $link->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
 
@@ -284,21 +284,21 @@ class User extends Torrent {
 
     $link->query("CREATE TABLE IF NOT EXISTS `identifiants` (
       `uid` int(11) NOT NULL,
-      `t411username` varchar(250) DEFAULT NULL,
-      `t411password` varchar(250) DEFAULT NULL,
-      `email` varchar(250) DEFAULT NULL,
+      `t411username` blob,
+      `t411password` blob,
+      `email` blob,
       UNIQUE KEY `uid` (`uid`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
 
     $link->query("CREATE TABLE IF NOT EXISTS `servers` (
       `id` int(11) NOT NULL AUTO_INCREMENT,
       `uid` int(11) NOT NULL,
-      `name` varchar(100) NOT NULL,
+      `name` blob,
       `type` enum('transmission','synology','local') NOT NULL,
-      `host` varchar(200) DEFAULT NULL,
+      `host` blob,
       `port` int(11) DEFAULT NULL,
-      `username` varchar(200) DEFAULT NULL,
-      `password` varchar(200) DEFAULT NULL,
+      `username` blob,
+      `password` blob,
       `folder` varchar(100) DEFAULT NULL,
       PRIMARY KEY (`id`)
     ) ENGINE=InnoDB DEFAULT CHARSET=utf8");
