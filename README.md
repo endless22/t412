@@ -31,7 +31,7 @@ const DL_PREFIX = 'https://dl.domain.tld/';
 /** nom de domaine, sans http(s) */
 public $domainName = 'domain.tld';
 /** utilisateur t411 - nécessaire pour lancer les requêtes cron */
-CONST T411USER = 'jeanneige';
+const T411USER = 'johndoe';
 ```
 
 Retournez à l'adresse où pointe votre domaine (`domain.tld/setup.php`) et vérifier que tous les tests renvoient "Ok".  

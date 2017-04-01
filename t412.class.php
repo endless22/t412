@@ -20,7 +20,7 @@ class T411 {
   /** nom de domaine */
   public $domainName = 'domain.tld';
   /** utilisateur t411 */
-  CONST T411USER = '';
+  const T411USER = '';
 
   /** variable de classe */
   public $token = null;
