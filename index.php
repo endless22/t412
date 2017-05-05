@@ -79,7 +79,7 @@ if (empty($t411->search) && empty($t411->error)) { ?>
 
     <div class="jumbotron">
       <h1><small style="color:red">Erreur !</small></h1>
-      <p>Les serveurs de <a href="https://www.t411.ch">T411</a> mettent trop de temps à répondre. Pensez à vérifier <a href="http://irc.t411.ch/ip/index.php">l'état du tracker</a>.</p>
+      <p>Les serveurs de <a href="https://www.t411.al">T411</a> mettent trop de temps à répondre. Pensez à vérifier <a href="http://irc.t411.ch/ip/index.php">l'état du tracker</a>.</p>
     </div>
 
 <?php } else { $array = array_slice($t411->search, ($page-1)*50, 50, true); ?>

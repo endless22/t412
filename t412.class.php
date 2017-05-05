@@ -6,8 +6,8 @@
  */
 class T411 {
 
-  const API_URL = 'https://api.t411.li';
-  const WEB_URL = 'https://t411.li';
+  const API_URL = 'https://api.t411.al';
+  const WEB_URL = 'https://t411.al';
   /** MySQL */
   const DB_HOST = 'localhost';
   const DB_NAME = '';
